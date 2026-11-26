@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="sensoryne-icon.webp" alt="Sensoryne" width="220">
+</p>
+
 # Sensoryne
 
 ## Project Overview
