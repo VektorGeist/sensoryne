@@ -6,7 +6,7 @@
 
 ## Project Overview
 
-Sensoryne is an independent perceptual evaluation and improvement platform, and a creative process for AI. A model makes a creative work. The finished render is handed in. An independent instrument perceives the render and returns evidence. The model criticizes the render against the work's structure record and its objective and revises in addressed operations, repeating until the model judges the work complete. The instrument perceives, the model evaluates and decides, the platform coordinates and preserves the record. Sensoryne makes nothing and hears nothing. Rendering happens on the composing side. The finished render is handed to Sensoryne.
+Sensoryne is an independent perceptual evaluation and improvement platform, and a creative process for AI. A model makes a creative work. The finished render is handed in. An independent instrument perceives the render and returns evidence. The model criticizes the render against the work's structure record and its objective and revises in addressed operations, repeating until the model judges the work complete. The instrument perceives, the model evaluates and decides, the platform coordinates and preserves the record. Sensoryne makes nothing: rendering happens on the composing side, and the finished render is handed to Sensoryne. Sensoryne hears the render: the instrument inside the application perceives it and returns the evidence. Rendering happens on the composing side. The finished render is handed to Sensoryne.
 
 The platform contains no scoring algorithm. Instruments report the measurable layer only. Every evidence document carries `interpretation: null`. Evidence keeps the outer shape of summary, measurements, and full record, with additional blocks described below.
 
@@ -16,7 +16,7 @@ A model that only sees its own source representation cannot detect defects that 
 
 ## Solution
 
-The model is connected to the platform as a client through the Meta Model API and calls six tools while it works: `sensoryne_open_session`, `sensoryne_submit_work`, `sensoryne_submit_decision`, `sensoryne_finish_session`, `sensoryne_probe`, and `sensoryne_recall`. The host sends one opening task per session and then executes tool calls only.
+The model is connected to the platform as a client and calls six tools while it works: `sensoryne_open_session`, `sensoryne_submit_work`, `sensoryne_submit_decision`, `sensoryne_finish_session`, `sensoryne_probe`, and `sensoryne_recall`. The host sends one opening task per session and then executes tool calls only.
 
 The loop, with source kept distinct from render at every step:
 
@@ -70,7 +70,7 @@ Dependencies are this project's own only: Python 3.9 or later, numpy, scipy, Pil
 pip install numpy scipy Pillow cairosvg
 ```
 
-Set MODEL_API_KEY in the environment.
+For the demonstration host only: set MODEL_API_KEY in the environment.
 
 ```bash
 python3 run_demo.py --app music
