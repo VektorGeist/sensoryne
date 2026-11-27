@@ -522,7 +522,6 @@ class PianoProbeTests(unittest.TestCase):
                 "..",
                 "embers-piano",
             ),
-            r"C:\sensoryne-live\embers-piano",
         ):
             candidate = os.path.normpath(candidate)
             if os.path.isdir(candidate) and candidate not in sys.path:
