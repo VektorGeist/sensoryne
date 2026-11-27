@@ -17,23 +17,46 @@ def _overlap(a,b):
 def evaluate_invariants(artifact,render_record,evidence=None):
  ids,root=_ids(artifact.get("svg","") if isinstance(artifact,dict) else "");required=[e.get("id") for e in artifact.get("elements",[]) if isinstance(e,dict) and e.get("id")] if isinstance(artifact,dict) else []
  missing=[x for x in required if x not in ids];checked=[_c("required_elements_present","Every element id the artifact declares as required is present in the SVG.",not missing,sorted(ids),missing)]
+ viewbox=root.get("viewBox") if root is not None else None
+ checked.append(_c("viewbox_present","Whether a viewBox is present on the SVG root is measured and recorded.",bool(viewbox),viewbox,[] if viewbox else [{"viewBox":viewbox}]))
+ present={x:(x in ids) for x in required}
+ checked.append(_c("declared_element_ids_presence","Which declared element ids are present or missing in the SVG is measured and recorded.",not missing,present,missing))
  rules=artifact.get("overlap_rules") or artifact.get("bounding_box_rules") or []
  bad=[]
  for rule in rules:
   if isinstance(rule,dict) and rule.get("a") and rule.get("b"):
    ba=_box(root,rule["a"]);bb=_box(root,rule["b"])
-   if ba and bb and not _overlap(ba,bb): bad.append(rule)
+   # A rule naming an absent element cannot hold: the pair is not
+   # present to overlap, so the judgment is not held.
+   if ba is None or bb is None:
+    bad.append(rule)
+   elif not _overlap(ba,bb): bad.append(rule)
  checked.append(_c("declared_overlap_rules","Declared bounding-box overlap rules hold for the named element pairs.",not bad,copy_rules(rules),bad))
  return {"checked":checked,"summary":{"total_checked":len(checked),"held":sum(1 for c in checked if c["held"]),"broken":sum(1 for c in checked if not c["held"])}}
 def copy_rules(r): return r
-def reliability_block(): return {"instrument":"raster analyzer","limits":["Rasterization resolution is the rendered image dimensions in pixels.","Dominant colors are the most frequent image colors by pixel count.","Ink coverage is the non-background pixel share."]}
+def reliability_block(): return {"instrument":"raster analyzer","limits":["Rasterization resolution is the rendered image dimensions in pixels.","Dominant colors are the most frequent image colors by pixel count.","Ink coverage is the non-background pixel share.","Comparison geometry tolerance is 0.5 SVG units: a delivered shape whose position or size departs from its declared values by more than 0.5 is a geometry_off finding."]}
+def _comparison_of(evidence,render_record):
+ for source in (evidence,render_record):
+  if isinstance(source,dict):
+   comp=source.get("comparison")
+   if isinstance(comp,dict): return comp
+   full=source.get("full")
+   if isinstance(full,dict) and isinstance(full.get("comparison"),dict): return full["comparison"]
+ return None
+def _comparison(artifact,render_record,evidence):
+ comp=_comparison_of(evidence,render_record)
+ if isinstance(comp,dict): return comp
+ try:
+  from .comparison import compute_comparison
+  return compute_comparison(artifact,render_record,evidence)
+ except Exception:
+  return None
 def objective_coverage(artifact,render_record,evidence=None):
- obj=artifact.get("objective") if isinstance(artifact,dict) else None;out=[]
- elems=artifact.get("elements",[]) if isinstance(artifact,dict) else []
- if isinstance(obj,dict):
-  for e in obj.get("elements") or []:
-   if isinstance(e,dict) and e.get("id"): out.append({"item":"required element %s"%e["id"],"present":any(x.get("id")==e["id"] for x in elems if isinstance(x,dict))})
- elif isinstance(obj,str) and obj: out.append({"item":"picture intent stated","present":bool(elems)})
- for e in elems:
-  if isinstance(e,dict) and e.get("id"): out.append({"item":"element %s"%e["id"],"present":True})
- return out
+ comp=_comparison(artifact,render_record,evidence)
+ if isinstance(comp,dict) and comp.get("shapes_realized_as_declared") is not None and comp.get("shapes_declared") is not None:
+  realized=comp.get("shapes_realized_as_declared")
+  declared=comp.get("shapes_declared")
+ else:
+  declared=len([e.get("id") for e in artifact.get("elements",[]) if isinstance(e,dict) and e.get("id")]) if isinstance(artifact,dict) else 0
+  realized=0
+ return [{"item":"declared shapes realized as declared, %s of %s"%(realized,declared),"covered":bool(declared) and realized==declared}]

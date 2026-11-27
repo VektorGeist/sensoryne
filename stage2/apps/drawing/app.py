@@ -23,8 +23,8 @@ SVG_RENDERER = "cairosvg"
 
 REVISION_SHAPE_TEXT = """Revisions are operations applied to the drawing, addressed by element id, in order. Each revision is validated against the parsed SVG, the result is re-parsed and re-validated, and a rejected revision leaves the current drawing unchanged.
 - {"op": "set_attribute", "id": "sun", "attribute": "cx", "value": "120"}: set one attribute on the element with that id.
-- {"op": "replace_element", "id": "sun", "svg": "<circle id=\\"sun\\" .../>"}: replace the element with that id with the given SVG element.
-- {"op": "add_element", "svg": "<circle id=\\"moon\\" .../>"}: add one SVG element.
+- {"op": "replace_element", "id": "sun", "svg": "<circle id=\\"sun\\" .../>" }: replace the element with that id with the given SVG element.
+- {"op": "add_element", "svg": "<circle id=\\"moon\\" .../>" }: add one SVG element.
 - {"op": "remove_element", "id": "sun"}: remove the element with that id."""
 
 
@@ -54,8 +54,8 @@ def _collect(svg):
 
 
 def validate(artifact):
-    """Structure only: the SVG parses as XML, has a viewBox,
-    and every intended element id exists in the SVG."""
+    """Structure only: an object with an svg string, the
+    SVG parses as XML, and the root element is svg."""
     errors = []
     if not isinstance(artifact, dict) or "svg" not in artifact:
         return ["drawing must be an object with an 'svg' string"]
@@ -68,22 +68,6 @@ def validate(artifact):
         return ["SVG does not parse as XML: %s" % exc]
     if _local_name(root.tag) != "svg":
         errors.append("root element of the SVG must be 'svg'")
-    if not root.get("viewBox"):
-        errors.append("SVG has no viewBox")
-    present = {entry["id"] for entry in elements}
-    intended = artifact.get("elements")
-    if intended is not None:
-        if not isinstance(intended, list):
-            errors.append("'elements' must be a list")
-        else:
-            for index, element in enumerate(intended, start=1):
-                if not isinstance(element, dict) or not element.get("id"):
-                    errors.append("intended element %d has no id" % index)
-                elif element["id"] not in present:
-                    errors.append(
-                        "intended element id %r does not exist in the SVG"
-                        % element["id"]
-                    )
     return errors
 
 
@@ -97,7 +81,7 @@ def composition_prompt(objective):
     return """Create a drawing meeting the objective's intent. Answer with the artifact JSON only, in this format and nothing else:
 {"svg": "<svg ...>...</svg>", "elements": [{"id": "...", "kind": "shape or text", "description": "what it is and where it sits"}]}
 
-The objective states the picture's intent in words, plus the intended elements list. The SVG must parse as XML, have a viewBox, and contain every intended element id.
+The objective states the picture's intent in words, plus the intended elements list.
 
 Objective:
 %s
@@ -163,6 +147,8 @@ OUTPUT (what was rendered): the rendered picture, with the analyzer's full evide
 
 Evidence:
 %s
+
+The evidence's comparison section is Sensoryne's judgment of the delivered drawing against the written declarations and the objective, and the decision must state how it answers that judgment.
 
 State any faults you find, order revisions if needed, and judge whether the rendered work meets the objective.
 
