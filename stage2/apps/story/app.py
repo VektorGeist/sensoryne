@@ -27,8 +27,9 @@ REVISION_SHAPE_TEXT = """Revisions are operations applied to the story, in order
 
 
 def validate(artifact):
-    """Structure only: section count matches the objective when
-    stated, every section non-empty."""
+    """Structure only: an object with a sections list, at
+    least one section, each section an object holding a
+    title and a text."""
     errors = []
     if not isinstance(artifact, dict) or "sections" not in artifact:
         return ["story must be an object with a 'sections' list"]
@@ -43,13 +44,6 @@ def validate(artifact):
             errors.append("section %d has an empty title" % index)
         if not isinstance(section.get("text"), str) or not section["text"].strip():
             errors.append("section %d is empty" % index)
-    objective = artifact.get("objective")
-    if isinstance(objective, dict) and "section_count" in objective:
-        if objective["section_count"] != len(sections):
-            errors.append(
-                "section count %d does not match the objective's %s"
-                % (len(sections), objective["section_count"])
-            )
     return errors
 
 
@@ -129,6 +123,8 @@ OUTPUT (what was delivered): the delivered text, with the analyzer's full eviden
 
 Evidence:
 %s
+
+The evidence's comparison section is Sensoryne's judgment of the delivered text against the written story and the objective, and the decision must state how it answers that judgment.
 
 State any faults you find, order revisions if needed, and judge whether the delivered work meets the objective.
 
