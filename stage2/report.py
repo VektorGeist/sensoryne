@@ -83,6 +83,10 @@ def build_report(session_dir, ledger_path):
             parts.append("<section><h3>Iteration %s - decision</h3><p>Faults: %s</p><p>Revisions: %s</p><p>Complete: %s</p><p>Assessment: %s</p></section>" % (_esc(entry.get("iteration")), _esc(json.dumps(decision.get("faults", []))), _esc(json.dumps(decision.get("revisions", []))), _esc(decision.get("complete")), _esc(decision.get("assessment", ""))))
         elif event == "revision_rejected":
             parts.append("<section><h3>Iteration %s - rejected revision</h3><p>Revision: %s</p><p>Error: %s</p></section>" % (_esc(entry.get("iteration")), _esc(json.dumps(entry.get("revision"))), _esc(entry.get("error", ""))))
+    for entry in entries:
+        if entry.get("event") == "judgment":
+            verdict = entry.get("verdict") or {}
+            parts.append("<section><h2>Judgment</h2><p>Bottom line: %s</p><p>%s</p><p>Strengths: %s</p><p>Weaknesses: %s</p></section>" % (_esc(verdict.get("bottom_line", "")), _esc(verdict.get("judgment", "")), _esc(json.dumps(verdict.get("strengths", []))), _esc(json.dumps(verdict.get("weaknesses", [])))))
     if end:
         parts.append("<h2>Ended by: %s after %s iterations</h2>" % (_esc(end.get("ended_by")), _esc(end.get("iterations"))))
         if end.get("assessment"):

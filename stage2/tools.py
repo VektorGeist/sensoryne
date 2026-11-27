@@ -1,7 +1,7 @@
-"""stage2/tools.py - six tool definitions and dispatch. No app logic."""
+"""stage2/tools.py - nine tool definitions (six for the working model, three for the judge) and dispatch. No app logic."""
 import copy
-OPEN_SESSION="sensoryne_open_session";SUBMIT_WORK="sensoryne_submit_work";SUBMIT_DECISION="sensoryne_submit_decision";FINISH_SESSION="sensoryne_finish_session";PROBE="sensoryne_probe";RECALL="sensoryne_recall"
-TOOL_NAMES=(OPEN_SESSION,SUBMIT_WORK,SUBMIT_DECISION,FINISH_SESSION,PROBE,RECALL)
+OPEN_SESSION="sensoryne_open_session";SUBMIT_WORK="sensoryne_submit_work";SUBMIT_DECISION="sensoryne_submit_decision";FINISH_SESSION="sensoryne_finish_session";PROBE="sensoryne_probe";RECALL="sensoryne_recall";JUDGE_LIST="sensoryne_judge_list_sessions";JUDGE_OPEN="sensoryne_judge_open";JUDGE_VERDICT="sensoryne_judge_verdict"
+TOOL_NAMES=(OPEN_SESSION,SUBMIT_WORK,SUBMIT_DECISION,FINISH_SESSION,PROBE,RECALL,JUDGE_LIST,JUDGE_OPEN,JUDGE_VERDICT)
 _DECISION={"type":"object","additionalProperties":True,"required":["faults","revisions","complete","assessment"],"properties":{"faults":{"type":"array","items":{"type":"object","additionalProperties":True,"required":["description","where"],"properties":{"description":{"type":"string"},"where":{"type":"string"}}}},"revisions":{"type":"array","items":{"type":"object","additionalProperties":True}},"complete":{"type":"boolean"},"assessment":{"type":"string"}}}
 TOOLS=[
  {"type":"function","name":OPEN_SESSION,"description":"Open a session, create its record and store entry, return session id, composition prompt text, and control information rules when control.","parameters":{"type":"object","additionalProperties":False,"required":["application","objective","condition","test"],"properties":{"application":{"type":"string"},"objective":{},"condition":{"type":"string","enum":["perceptual","control"]},"test":{"type":"boolean"}}}},
@@ -9,6 +9,9 @@ TOOLS=[
  {"type":"function","name":SUBMIT_DECISION,"description":"Submit a decision. Record it, apply revisions, store new version, re-render, re-perceive, return evidence, structure, applied/rejected, session so far.","parameters":{"type":"object","additionalProperties":False,"required":["session_id","decision"],"properties":{"session_id":{"type":"string"},"decision":_DECISION}}},
  {"type":"function","name":FINISH_SESSION,"description":"Declare the work complete. End as model_complete and build report.","parameters":{"type":"object","additionalProperties":False,"required":["session_id"],"properties":{"session_id":{"type":"string"}}}},
  {"type":"function","name":PROBE,"description":"Apply a decision's revisions to a throwaway copy, render and perceive it, return hypothetical evidence marked probe true with a delta against the current version. No version is created and the session cannot end.","parameters":{"type":"object","additionalProperties":False,"required":["session_id","decision"],"properties":{"session_id":{"type":"string"},"decision":_DECISION}}},
+ {"type":"function","name":JUDGE_LIST,"description":"Judge seat: list sessions from disk. The judge reads a session's complete record and renders a judgment of the work itself; the judge cannot submit work, revise, or end a maker's session.","parameters":{"type":"object","additionalProperties":False,"required":[],"properties":{}}},
+ {"type":"function","name":JUDGE_OPEN,"description":"Judge seat: open a finished session's complete record pack. The judge reads a session's complete record and renders a judgment of the work itself; the judge cannot submit work, revise, or end a maker's session.","parameters":{"type":"object","additionalProperties":False,"required":["session_id"],"properties":{"session_id":{"type":"string"}}}},
+ {"type":"function","name":JUDGE_VERDICT,"description":"Judge seat: record a judgment of the work itself in a session's history. The judge reads a session's complete record and renders a judgment of the work itself; the judge cannot submit work, revise, or end a maker's session.","parameters":{"type":"object","additionalProperties":False,"required":["session_id","verdict"],"properties":{"session_id":{"type":"string"},"verdict":{"type":"object","required":["bottom_line","judgment","strengths","weaknesses"],"properties":{"bottom_line":{"type":"string","enum":["good","mixed","not_good"]},"judgment":{"type":"string"},"strengths":{"type":"array","items":{"type":"string"}},"weaknesses":{"type":"array","items":{"type":"string"}}}}}}},
  {"type":"function","name":RECALL,"description":"Return stored pairs for an application from sessions that ended model_complete, most recent first, up to limit.","parameters":{"type":"object","additionalProperties":False,"required":["application","limit"],"properties":{"application":{"type":"string"},"limit":{"type":"integer"}}}},
 ]
 class ToolRegistry:
@@ -24,6 +27,10 @@ def dispatch(reg,name,args):
  args=copy.deepcopy(args or {})
  if name==OPEN_SESSION: return controller.open_session(reg,args)
  if name==RECALL: return controller.recall_memory(reg,args.get("application"),args.get("limit"))
+ from . import judge as judge_module
+ if name==JUDGE_LIST: return judge_module.list_sessions(reg)
+ if name==JUDGE_OPEN: return judge_module.open_judgment(reg,args.get("session_id"))
+ if name==JUDGE_VERDICT: return judge_module.record_verdict(reg,args.get("session_id"),args.get("verdict"))
  sid=args.get("session_id");ctx=reg.get(sid)
  if ctx.get("ended_by") is not None: return {"session_id":sid,"ended_by":ctx["ended_by"],"message":"session has ended; no further tool calls accepted"}
  if name==SUBMIT_WORK: return controller.submit_work(ctx,args.get("artifact"))
