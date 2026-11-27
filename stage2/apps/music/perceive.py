@@ -5,7 +5,7 @@ from .hearing.cochlea import Cochlea, load_wav
 from .hearing.reading import aggregate_frames, read_frames
 from .hearing.chladni import mode_weights, top_modes
 from .hearing.trajectory import make_trajectory
-from .hearing.token_pack import build_token_pack
+from .hearing.token_pack import build_token_pack, model_token_pack
 from .hearing.harmonic import harmonic_pitch
 from .hearing.segmentation import segment_frames
 from .hearing.phonetics import analyze_phonetics, track_formants
@@ -99,9 +99,10 @@ def _vocal(path, lyrics, gallery=None):
     summary = "Vocal reading: %d lyric lines, %d phrases detected. " % (len(lyrics), len(segments)) + " ".join("Line %d onset %s syllable events %d of %d pitch %s." % (x["line"], x["onset_time"], x["syllable_events_detected"], x["stated_syllable_count"], x["note"]) for x in lines)
     pack = build_token_pack(path, 20, gallery=gallery)
     harm = harmonic_pitch(samples, sr, cochlea_f0=reading.get("f0") or agg.get("median_pitch") or None)
-    measurements = _j({"heard": summary, "summary": summary, "vocal": vocal, "note": reading.get("note"), "pitch_hz": reading.get("pitch_hz"), "f0": reading.get("f0"), "loudness": reading.get("loudness"), "loud": reading.get("loudness"), "brightness": reading.get("brightness"), "centroid": reading.get("brightness"), "energy_center_hz": reading.get("energy_center_hz"), "region": reading.get("region"), "pitch_trend": reading.get("pitch_trend"), "loud_trend": reading.get("loud_trend"), "descriptor": descriptor, "mode_weights": weights, "chladni_modes": top_modes(weights, 5), "harmonic_pitch_hz": harm["harmonic_pitch_hz"], "harmonic_confidence": harm["confidence"], "harmonic_disagreement": harm["disagreement_flag"], "polyphony_candidates": harm["candidates"], "token_pack": pack, "phonetics": phon})
+    model_pack = model_token_pack(pack)
+    measurements = _j({"heard": summary, "summary": summary, "vocal": vocal, "note": reading.get("note"), "pitch_hz": reading.get("pitch_hz"), "loudness": reading.get("loudness"), "brightness": reading.get("brightness"), "energy_center_hz": reading.get("energy_center_hz"), "region": reading.get("region"), "pitch_trend": reading.get("pitch_trend"), "loud_trend": reading.get("loud_trend"), "descriptor": descriptor, "mode_weights": weights, "chladni_modes": top_modes(weights, 5), "harmonic_pitch_hz": harm["harmonic_pitch_hz"], "harmonic_confidence": harm["confidence"], "harmonic_disagreement": harm["disagreement_flag"], "polyphony_candidates": harm["candidates"], "token_pack": model_pack, "phonetics": phon})
     full = _j({"render_path": str(path), "perceived_at": datetime.now(timezone.utc).isoformat(), "instrument": "Sensoryne hearing", "measurements": measurements, "token_pack": pack, "vocal": vocal, "interpretation": None})
-    return {"summary": summary, "measurements": measurements, "token_pack": _j(pack), "full": full, "render_path": str(path), "instrument": "Sensoryne hearing", "interpretation": None}
+    return {"summary": summary, "measurements": measurements, "token_pack": _j(model_pack), "full": full, "render_path": str(path), "instrument": "Sensoryne hearing", "interpretation": None}
 
 
 def perceive_wav(path, gallery=None, lyrics=None, artifact=None):
@@ -120,9 +121,10 @@ def perceive_wav(path, gallery=None, lyrics=None, artifact=None):
     match = {"name": None, "nearest": None, "distance": None, "known": False, "candidates": []}
     if gallery is not None and hasattr(gallery, "recognize"):
         match = gallery.recognize(descriptor, make_trajectory(frames))
-    measurements = _j({"heard": reading.get("sentence"), "note": reading.get("note"), "cents": reading.get("cents"), "pitch_hz": reading.get("pitch_hz"), "f0": reading.get("f0"), "loud": reading.get("loudness"), "loudness": reading.get("loudness"), "brightness": reading.get("brightness"), "centroid": reading.get("brightness"), "energy_center_hz": reading.get("energy_center_hz"), "peak_hz": reading.get("energy_center_hz"), "region": reading.get("region"), "peak_band": agg.get("peak_band"), "pitch_trend": reading.get("pitch_trend"), "loud_trend": reading.get("loud_trend"), "onset_rate": reading.get("onset_rate"), "duration": reading.get("duration"), "silent": reading.get("silent"), "tonal": reading.get("tonal"), "pitched": reading.get("pitched"), "descriptor": descriptor, "mode_weights": weights, "chladni_modes": top_modes(weights, 5), "harmonic_pitch_hz": harm["harmonic_pitch_hz"], "harmonic_midi": harm["harmonic_midi"], "harmonic_confidence": harm["confidence"], "harmonic_disagreement": harm["disagreement_flag"], "polyphony_candidates": harm["candidates"], "gallery_match": match, "token_pack": pack, "image_reading": reading.get("image_reading")})
+    model_pack = model_token_pack(pack)
+    measurements = _j({"heard": reading.get("sentence"), "note": reading.get("note"), "cents": reading.get("cents"), "pitch_hz": reading.get("pitch_hz"), "loudness": reading.get("loudness"), "brightness": reading.get("brightness"), "energy_center_hz": reading.get("energy_center_hz"), "region": reading.get("region"), "peak_band": agg.get("peak_band"), "pitch_trend": reading.get("pitch_trend"), "loud_trend": reading.get("loud_trend"), "onset_rate": reading.get("onset_rate"), "duration": reading.get("duration"), "silent": reading.get("silent"), "tonal": reading.get("tonal"), "pitched": reading.get("pitched"), "descriptor": descriptor, "mode_weights": weights, "chladni_modes": top_modes(weights, 5), "harmonic_pitch_hz": harm["harmonic_pitch_hz"], "harmonic_midi": harm["harmonic_midi"], "harmonic_confidence": harm["confidence"], "harmonic_disagreement": harm["disagreement_flag"], "polyphony_candidates": harm["candidates"], "gallery_match": match, "token_pack": model_pack, "image_reading": reading.get("image_reading")})
     full = _j({"render_path": str(path), "perceived_at": datetime.now(timezone.utc).isoformat(), "instrument": "Sensoryne hearing", "measurements": measurements, "token_pack": pack, "reading": reading, "harmonic": harm, "interpretation": None})
-    return {"summary": reading.get("sentence"), "measurements": measurements, "token_pack": _j(pack), "full": full, "render_path": str(path), "instrument": "Sensoryne hearing", "interpretation": None}
+    return {"summary": reading.get("sentence"), "measurements": measurements, "token_pack": _j(model_pack), "full": full, "render_path": str(path), "instrument": "Sensoryne hearing", "interpretation": None}
 
 
 perceive_render = perceive_wav

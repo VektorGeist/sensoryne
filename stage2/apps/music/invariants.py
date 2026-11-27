@@ -10,6 +10,24 @@ def _parts(artifact):
 def _is_vocal(artifact):
     return isinstance(artifact, dict) and artifact.get("kind") == "vocal"
 
+def _comparison_per_part(artifact, render_record, evidence):
+    """Per-part notes-heard figures from the comparison, if present.
+
+    The comparison block (findings, per_part counts, tolerances)
+    is attached to the evidence and to the render record by the
+    controller.  This reads it without recomputing anything: the
+    judgment of what was heard belongs to the comparison.
+    """
+    for source in (evidence, render_record):
+        if isinstance(source, dict):
+            comp = source.get("comparison")
+            if isinstance(comp, dict) and isinstance(comp.get("per_part"), list):
+                return comp["per_part"]
+            full = source.get("full")
+            if isinstance(full, dict) and isinstance(full.get("comparison"), dict):
+                return full["comparison"].get("per_part") or []
+    return None
+
 def evaluate_invariants(artifact, render_record, evidence=None):
     checked = []
     if _is_vocal(artifact):
@@ -31,29 +49,40 @@ def evaluate_invariants(artifact, render_record, evidence=None):
             checked.append(_c("vocal_pitch_present", "Pitch is present in every lyric line.", not nopitch, [x.get("median_pitch_hz") for x in lines], nopitch))
         return {"checked": checked, "summary": {"total_checked": len(checked), "held": sum(1 for c in checked if c["held"]), "broken": sum(1 for c in checked if not c["held"])}}
     parts = _parts(artifact)
-    total = 0.0
-    for p in parts:
-        for n in p.get("notes", []) if isinstance(p, dict) else []:
-            dur = n.get("dur")
-            total = max(total, float(n.get("start", 0)) + (float(dur) if dur is not None else 0.0))
-    checked.append(_c("total_duration_15_20", "Total duration is between 15 and 20 seconds.", 15.0 <= total <= 20.0, total, [] if 15.0 <= total <= 20.0 else [{"total": total}]))
-    harmony = next((p for p in parts if isinstance(p, dict) and p.get("name") == "harmony"), None)
-    has_harmony = bool(harmony and any(float(n.get("start", 0)) >= 8.0 for n in harmony.get("notes", [])))
-    checked.append(_c("harmony_at_or_after_8", "At least one harmony note starts at or after 8.0 seconds.", has_harmony, has_harmony, [] if has_harmony else [{"part": "harmony", "at_or_after": 8.0}]))
-    violations = []
     counts = {}
+    for p in parts:
+        if isinstance(p, dict):
+            counts[p.get("name")] = len(p.get("notes", []))
+    # Composer-chosen part names are never a judgment.  What the
+    # comparison heard of what was written is reported per part:
+    # notes heard of notes written, taken from the comparison
+    # block.  When no comparison is present (no render heard),
+    # the heard count is measured as none found, so the check
+    # is unheld and the written counts are still stated.
+    per_part = _comparison_per_part(artifact, render_record, evidence)
+    by_name = {}
+    if per_part:
+        for entry in per_part:
+            if isinstance(entry, dict):
+                by_name[entry.get("part")] = entry
+    heard = []
+    not_heard = []
     for p in parts:
         if not isinstance(p, dict):
             continue
         name = p.get("name")
-        gain = float(p.get("gain", 1.0))
-        cap = 0.41 if name == "bass" else 0.52
-        counts[name] = len(p.get("notes", []))
-        for n in p.get("notes", []):
-            eff = float(n.get("vel", 0)) * gain
-            if eff > cap:
-                violations.append({"part": name, "start": float(n.get("start", 0)), "midi": n.get("midi"), "effective_velocity": eff, "cap": cap})
-    checked.append(_c("effective_velocity_caps", "No note in any part exceeds that part's effective velocity cap (0.52, bass 0.41).", not violations, [{"part": k, "cap": 0.41 if k == "bass" else 0.52} for k in counts], violations))
+        written = counts.get(name, 0)
+        entry = by_name.get(name)
+        if entry is not None:
+            heard_n = int(entry.get("notes_heard") or 0)
+            not_heard_n = int(entry.get("notes_not_heard") or 0)
+        else:
+            heard_n = 0
+            not_heard_n = written
+        heard.append({"part": name, "notes_written": written, "notes_heard": heard_n})
+        if not_heard_n:
+            not_heard.append({"part": name, "notes_written": written, "notes_heard": heard_n, "notes_not_heard": not_heard_n})
+    checked.append(_c("notes_heard_of_written", "Per part, the notes heard are reported against the notes written.", not not_heard, heard, not_heard))
     try:
         from .instruments import get_instrument
         inst_name = artifact.get("instrument") or "piano" if isinstance(artifact, dict) else "piano"
@@ -62,6 +91,12 @@ def evaluate_invariants(artifact, render_record, evidence=None):
     except Exception:
         rng = None
         inst_name = artifact.get("instrument") if isinstance(artifact, dict) else None
+    # The range judgment: every note falls inside the named
+    # instrument's range. An unknown instrument name is echoed
+    # as the measured value and the judgment is always held,
+    # with no violations: an unknown name is a measurement,
+    # not a failure. A known range is checked note by note,
+    # and any note outside it is a named violation.
     range_bad = []
     if rng:
         for p in parts:
@@ -75,7 +110,18 @@ def evaluate_invariants(artifact, render_record, evidence=None):
     return {"checked": checked, "summary": {"total_checked": len(checked), "held": sum(1 for c in checked if c["held"]), "broken": sum(1 for c in checked if not c["held"])}}
 
 def reliability_block():
-    return {"instrument": "Sensoryne hearing", "limits": ["Sample rate and FFT resolution are those of the handed-in render and the cochlea analysis block.", "Fundamental pitch is the strongest interpolated peak in the pitch band.", "Syllable and formant figures are estimates from the stated phonetic methods.", "The hearing works on handed-in renders only; there is no live capture."]}
+    # Comparison tolerances, stated here and in the comparison
+    # itself. The dynamics mapping is calibrated on the hearing
+    # itself, from renders of known velocity: expected_db for a
+    # segment is DYNAMICS_OFFSET_DB plus 10*log10 of the mean
+    # written power in that segment, where the written power of
+    # a part is the sum over its notes starting in the segment
+    # of (effective velocity squared times duration), divided
+    # by the segment duration. Effective velocity is velocity
+    # times part gain. The offset is the calibrated constant
+    # that maps that written power to the hearing's measured
+    # loudness in dB for a correct render.
+    return {"instrument": "Sensoryne hearing", "limits": ["Sample rate and FFT resolution are those of the handed-in render and the cochlea analysis block.", "Fundamental pitch is the strongest interpolated peak in the pitch band.", "Syllable and formant figures are estimates from the stated phonetic methods.", "The hearing works on handed-in renders only; there is no live capture.", "Comparison pitch tolerance is 50 cents; a written note is counted heard when its harmonic energy is at least 0.15 of the strongest pitch in its window; silence is at or below -70 dB.", "Comparison dynamics: expected_db = -24.0 + 10*log10(sum((velocity*gain)^2 * duration) / segment_duration) over the part's notes starting in the segment, threshold 2.5 dB."]}
 
 def objective_coverage(artifact, render_record, evidence=None):
     out = []
@@ -84,13 +130,49 @@ def objective_coverage(artifact, render_record, evidence=None):
             out.append({"item": "lyric line %d with %d stated syllables" % (i + 1, len(line)), "present": bool(line)})
         return out
     parts = artifact.get("parts", []) if isinstance(artifact, dict) else []
-    counts = {p.get("name"): len(p.get("notes", [])) for p in parts if isinstance(p, dict)}
-    for name in ("melody", "harmony", "bass"):
-        out.append({"item": "part %s" % name, "present": counts.get(name, 0) > 0})
-    total_notes = sum(counts.values())
-    out.append({"item": "note count %d" % total_notes, "present": total_notes > 0})
-    if isinstance(artifact, dict) and artifact.get("instrument"):
-        out.append({"item": "instrument %s" % artifact["instrument"], "present": True})
+    counts = {}
+    for p in parts:
+        if isinstance(p, dict):
+            counts[p.get("name")] = len(p.get("notes", []))
+    # Coverage derived from the comparison: per part, notes
+    # heard of notes written, plus the instrument range item.
+    # Nothing is covered by construction: absent comparison
+    # means no notes heard, and an empty part means none written.
+    per_part = _comparison_per_part(artifact, render_record, evidence)
+    by_name = {}
+    if per_part:
+        for entry in per_part:
+            if isinstance(entry, dict):
+                by_name[entry.get("part")] = entry
+    for p in parts:
+        if not isinstance(p, dict):
+            continue
+        name = p.get("name")
+        written = counts.get(name, 0)
+        entry = by_name.get(name)
+        heard_n = int(entry.get("notes_heard") or 0) if entry is not None else 0
+        out.append({"item": "part %s: %d of %d notes heard" % (name, heard_n, written), "covered": bool(written) and heard_n >= written})
+    # The instrument range item, from the range check the
+    # invariants report: a part whose notes all fall inside the
+    # named instrument's range covers it.
+    rng = None
+    inst_name = artifact.get("instrument") if isinstance(artifact, dict) else None
+    if isinstance(artifact, dict):
+        try:
+            from .instruments import get_instrument
+            inst = get_instrument(inst_name or "piano")
+            rng = inst.get("written") or inst.get("sounding") or inst.get("absolute_range")
+        except Exception:
+            rng = None
+    if rng:
+        in_range = True
+        for p in parts:
+            if not isinstance(p, dict):
+                continue
+            for n in p.get("notes", []):
+                if not (rng["low_midi"] <= int(n.get("midi", -1)) <= rng["high_midi"]):
+                    in_range = False
+        out.append({"item": "instrument range %s" % (inst_name or "piano"), "covered": bool(in_range)})
     return out
 
 def robustness_variations():

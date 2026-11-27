@@ -1,11 +1,10 @@
-"""stage2/apps/music/app.py - music application, instrumental and vocal. Artifact names instrument; validation vs table."""
+"""stage2/apps/music/app.py - music application, instrumental and vocal. Artifact names instrument; validation is structural only."""
 import copy, json, math
 from ...decision import DECISION_SHAPE_TEXT
 from .perceive import perceive_wav
 from .instruments import get_instrument, note_frequency, NOTES
 
 NAME = "music"
-PART_NAMES = ("melody", "harmony", "bass")
 _OFFSET = {"piano": 0, "guitar": -12, "violin": 0, "viola": 0, "cello": 0, "double bass": -12, "harp": 0, "flute": 0, "oboe": 0, "clarinet": -2, "bassoon": 0, "trumpet": -2, "french horn": -7, "tenor trombone": 0, "soprano saxophone": -2, "alto saxophone": -9, "tenor saxophone": -14, "baritone saxophone": -21}
 
 REVISION_SHAPE_TEXT = """Revisions applied to the score, in order:
@@ -59,58 +58,46 @@ def validate(artifact):
         return ["artifact must be an object"]
     if _is_vocal(artifact):
         return _validate_vocal(artifact)
-    if "parts" not in artifact:
+    if "parts" not in artifact or not isinstance(artifact.get("parts"), list):
         return ["score must be an object with a 'parts' list"]
     errors = []
-    inst_name = artifact.get("instrument") or "piano"
-    try:
-        inst = get_instrument(inst_name)
-    except ValueError as e:
-        return [str(e)]
-    names = [p.get("name") for p in artifact.get("parts", [])]
-    if sorted(names) != sorted(PART_NAMES) or len(names) != 3:
-        errors.append("exactly the three parts 'melody', 'harmony', 'bass' are required; got %r" % (names,))
-    total = score_total_length(artifact)
-    if not 15.0 <= total <= 20.0:
-        errors.append("total length must be between 15 and 20 seconds; got %.3f" % total)
-    harmony = next((p for p in artifact.get("parts", []) if p.get("name") == "harmony"), None)
-    if harmony is not None and not any(float(n["start"]) >= 8.0 for n in harmony.get("notes", [])):
-        errors.append("at least one harmony note must start at or after 8.0 seconds")
-    rng = inst.get("written") or inst.get("sounding") or inst.get("absolute_range")
     for part in artifact.get("parts", []):
+        if not isinstance(part, dict):
+            errors.append("part must be an object")
+            continue
         name = part.get("name")
         gain = part.get("gain", 1.0)
-        if not _finite(gain) or float(gain) < 0:
+        if "gain" in part and (not _finite(gain) or float(gain) < 0):
             errors.append("part %r has an invalid gain" % name)
+        notes = part.get("notes", [])
+        if notes is not None and not isinstance(notes, list):
+            errors.append("part %r notes must be a list" % name)
             continue
-        cap = 0.41 if name == "bass" else 0.52
-        for n in part.get("notes", []):
+        for n in notes or []:
+            if not isinstance(n, dict):
+                errors.append("part %r note must be an object" % name); break
             if not _finite(n.get("start")) or float(n["start"]) < 0:
                 errors.append("part %r note invalid start" % name); break
             if not isinstance(n.get("midi"), int) or isinstance(n.get("midi"), bool) or not 0 <= n["midi"] <= 127:
                 errors.append("part %r note invalid midi" % name); break
-            if rng and not (rng["low_midi"] <= n["midi"] <= rng["high_midi"]):
-                errors.append("part %r note midi %s outside %s range %s-%s" % (name, n["midi"], inst_name, rng["low"]["name"], rng["high"]["name"])); break
             v = n.get("vel")
             if not _finite(v) or not 0.0 <= float(v) <= 1.0:
                 errors.append("part %r note invalid velocity" % name); break
             d = n.get("dur")
             if d is not None and (not _finite(d) or float(d) <= 0):
                 errors.append("part %r note invalid duration" % name); break
-            if float(v) * float(gain) > cap:
-                errors.append("effective velocity %.3f in part %r exceeds %.2f cap" % (float(v) * float(gain), name, cap)); break
     return errors
 
 def composition_prompt(objective):
     return """Compose a work for Sensoryne. Answer with one artifact JSON object and nothing else.
 
-Instrumental form: {"instrument": "piano", "parts": [{"name": "melody", "gain": 1.0, "notes": [{"start": 0.0, "midi": 72, "vel": 0.4, "dur": 0.9}]}, {"name": "harmony", "gain": 1.0, "notes": []}, {"name": "bass", "gain": 1.0, "notes": []}]}
+Instrumental form: {"instrument": "piano", "parts": [{"name": "your part name", "gain": 1.0, "notes": [{"start": 0.0, "midi": 72, "vel": 0.4, "dur": 0.9}]}]}
 Vocal form: {"kind": "vocal", "lyrics": [["la", "la"], ["lu", "na"]]}
 
 Objective: %s
 
-Instrumental requirements: exactly three parts melody/harmony/bass; total 15-20 seconds; melody leading, harmony lower, bass grounding; even dynamics; every written note sounds; effective velocity (vel*gain) <=0.52 all parts and <=0.41 bass; at least one harmony note at/after 8.0s; name the instrument in "instrument" and write notes within that instrument's written range.
-Vocal requirements: lyrics as a list of lines, each line a list of syllables or words in order.
+Format: an instrument name in "instrument", one or more parts with composer-chosen names in "parts", each part holding a "notes" list with notes as start, midi, vel, dur.
+Vocal format: lyrics as a list of lines, each line a list of syllables or words in order.
 Answer with one artifact JSON object and nothing else.""" % (objective,)
 
 def composition_retry_prompt(objective, errors, rejected):
@@ -154,6 +141,8 @@ Structure record:
 OUTPUT (rendered, evidence):
 %s
 
+The evidence's comparison section is Sensoryne's judgment of the render against the written work and the objective, and the decision must state how it answers that judgment.
+
 Judge output vs input/objective, state faults, revisions, completeness.
 
 %s
@@ -191,7 +180,14 @@ def structure_record(artifact):
             written = int(n["midi"])
             sounding = written + off
             sname = _midi_name(sounding)
-            entries.append({"start": float(n["start"]), "midi": written, "dur": n.get("dur"), "written_name": _midi_name(written), "sounding_midi": sounding, "sounding_name": sname, "sounding_freq_hz": note_frequency(sname) if sname else None})
+            # Sounding frequency from the sounding midi
+            # number directly (440 * 2**((midi-69)/12)),
+            # never through the note name: several names in
+            # the table are enharmonic respellings whose
+            # name parsing would shift the pitch by a
+            # semitone.
+            sounding_freq = 440.0 * (2.0 ** ((sounding - 69) / 12.0)) if isinstance(sounding, (int, float)) else None
+            entries.append({"start": float(n["start"]), "midi": written, "dur": n.get("dur"), "written_name": _midi_name(written), "sounding_midi": sounding, "sounding_name": sname, "sounding_freq_hz": sounding_freq})
         total += len(entries)
         parts.append({"part": p.get("name"), "note_count": len(entries), "notes": entries})
     return {"instrument": inst_name, "transposition": inst.get("transposition"), "written_range": inst.get("written") or inst.get("sounding"), "sounding_range": inst.get("sounding") or inst.get("written"), "part_count": len(parts), "note_count": total, "parts": parts}
@@ -213,11 +209,38 @@ def generate_ground_truth(faults):
 def plant_faults(score):
     if _is_vocal(score):
         return []
-    harmony = next(p for p in score["parts"] if p.get("name") == "harmony")
-    target = next((n for n in harmony.get("notes", []) if float(n["start"]) >= 8.0), None)
-    if target is None:
-        raise ValueError("no harmony note at/after 8.0s")
-    return [{"kind": "part_gain", "part": "bass", "factor": 2.4}, {"kind": "swell", "from": 9.0, "to": 12.0, "factor": 1.9}, {"kind": "drop_note", "part": "harmony", "start": float(target["start"]), "midi": int(target["midi"])}]
+    parts = [p for p in score.get("parts", []) if isinstance(p, dict)] if isinstance(score, dict) else []
+    if not parts:
+        return []
+    try:
+        total = score_total_length(score)
+    except Exception:
+        total = 0.0
+    faults = []
+    candidates = []
+    for p in parts:
+        midis = [int(n["midi"]) for n in p.get("notes", []) if isinstance(n, dict) and isinstance(n.get("midi"), int) and not isinstance(n.get("midi"), bool)]
+        if midis:
+            candidates.append((min(midis), p.get("name")))
+    if candidates:
+        lowest_midi, lowest_part = min(candidates, key=lambda item: item[0])
+        faults.append({"kind": "part_gain", "part": lowest_part, "factor": 2.4})
+    if total and total > 0:
+        faults.append({"kind": "swell", "from": float(total) * 0.45, "to": float(total) * 0.6, "factor": 1.9})
+        half = float(total) / 2.0
+        target = None
+        target_part = None
+        for p in parts:
+            for n in p.get("notes", []):
+                if isinstance(n, dict) and _finite(n.get("start")) and float(n["start"]) >= half:
+                    target = n
+                    target_part = p
+                    break
+            if target is not None:
+                break
+        if target is not None:
+            faults.append({"kind": "drop_note", "part": target_part.get("name"), "start": float(target["start"]), "midi": int(target["midi"])})
+    return faults
 
 def perceive(render_record):
     artifact = None
@@ -231,7 +254,7 @@ def _clamp(v):
     return float(min(1.0, max(0.0, float(v))))
 
 def _req_part(s, part):
-    if part not in PART_NAMES or not any(p.get("name") == part for p in s.get("parts", [])):
+    if not any(isinstance(p, dict) and p.get("name") == part for p in s.get("parts", [])):
         raise ValueError("invalid part name: %r" % (part,))
 
 def _num(r, key, req=False):
@@ -288,7 +311,7 @@ def apply_revision(artifact, revision):
         if op not in ("replace_line", "add_line", "remove_line"):
             raise ValueError("unknown vocal revision op: %r" % (op,))
         return _apply_vocal_revision(revised, revision)
-    by = {p.get("name"): p for p in revised.get("parts", [])}
+    by = {p.get("name"): p for p in revised.get("parts", []) if isinstance(p, dict)}
     if op == "set_part_gain":
         part = revision.get("part"); _req_part(revised, part); v = _num(revision, "value", True)
         if v < 0:
