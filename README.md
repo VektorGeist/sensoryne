@@ -28,6 +28,14 @@ The model connects as a client and calls six tools while it works: `sensoryne_op
 
 Recorded sessions replay in the viewer with no model and no API key: open the viewer over a sessions folder and every version, render, evidence document, and decision is there to inspect.
 
+## The judge connection point
+
+Sensoryne has a second connection point, for a judge. The comparison judges a delivery against the work as written; it does not judge whether the work itself is good. That second judgment belongs to a separate model, connected through three further tools: `sensoryne_judge_list_sessions`, `sensoryne_judge_open`, and `sensoryne_judge_verdict`.
+
+A judge model connects independently of the model that made the work. It cannot submit work, revise anything, or end a session. Opening a session hands it the complete record: the written work in every version, the evidence and the comparison findings for every perception, the maker's decisions in order, and how the session ended. The pack also carries the application's judging brief: each application states, in its own terms, how its kind of work is to be judged, and instructs the judge to ground every claim in the facts in the record and to say so where the record shows nothing. The music brief, for example, has the judge name the kind of piece from the objective and hold it to that kind's measure: a symphony is judged on its movements, its thematic material developed across the whole span, and whether its length is earned, while a short piano piece is judged at its own scale, neither punished for not being a symphony nor credited as one.
+
+The judge records a verdict on the session's record: a bottom line (good, mixed, or not good), the judgment in its own words, and the strengths and weaknesses it found. Verdicts are recorded, never enforced; nothing in the platform acts on them, and the platform still assigns no score of its own. In this submission both seats, the working model and the judge, are Muse Ember.
+
 ## Applications
 
 Eight applications share one interface. Each declares its artifact shape, its validation, its renderer, its instrument, and its comparison: the findings its judgment can name.
@@ -45,23 +53,23 @@ Every application also runs control sessions (no perception, the model's own imp
 
 ## Viewer
 
-The viewer replays recorded sessions from all applications. It shows the session explorer, the iteration timeline, the render, the evidence, the comparison findings, the model's decision, and, between versions, the delta. Each application has one drawn panel built from its own evidence: a time ruler for sound design, declared against realized boxes for typography, declared against delivered shapes for drawing, a frame strip for animation, a checks panel for code, a form grid for poetry, section bars with promised events for story. The page is fully self-contained and fetches nothing from the network.
+The viewer replays recorded sessions from all applications. It shows the session explorer, the iteration timeline, the render, the evidence, the comparison findings, the model's decision, any verdicts a judge model has recorded for the session, and, between versions, the delta. Each application has one drawn panel built from its own evidence: a time ruler for sound design, declared against realized boxes for typography, declared against delivered shapes for drawing, a frame strip for animation, a checks panel for code, a form grid for poetry, section bars with promised events for story. The page is fully self-contained and fetches nothing from the network.
 
 Sensoryne also ships as an installable desktop application (Windows, per-user install) that opens this viewer over the local session store.
 
 ## Boundaries
 
-Sensoryne judges whether the delivered work matches the written work and the stated objective, and names every departure it finds. It does not judge aesthetic quality, meaning, or intent, and no finding claims otherwise. Each instrument's measurements have stated limits, recorded with the evidence itself as reliability metadata. The code application judges a program only against the checks its author stated; passing them is not a claim of general correctness or security.
+Sensoryne's own judgment reaches only whether the delivered work matches the written work and the stated objective, and it names every departure it finds; no finding claims anything about aesthetic quality, meaning, or intent. A verdict recorded through the judge connection point is a different thing: it is a connected judge model's judgment of the work itself, rendered from the facts in the record, and it stands in the record as that model's view, not as a platform measurement or score. Each instrument's measurements have stated limits, recorded with the evidence itself as reliability metadata. The code application judges a program only against the checks its author stated; passing them is not a claim of general correctness or security.
 
 ## Testing
 
-The suite covers the platform core, every application's comparison judgment with planted faults, the session store, the probe and recall tools, and the viewer page.
+The suite covers the platform core, every application's comparison judgment with planted faults, the session store, the probe, recall, and judge tools, and the viewer page.
 
 ```bash
 python -m unittest discover -s tests
 ```
 
-Current state: 124 tests, with one recorded failure, `test_probe_clean_render_has_no_findings`. On one faithful two-part piano render, a single high note (G5) whose attack is masked by the lower part still sounding reads about 10.7 dB softer than written and draws one dynamics finding. Every planted loudness fault is caught and named correctly. The limit is recorded rather than tuned away, because fitting the threshold to that note would make the judgment less trustworthy everywhere else. Four piano-route tests and two session-record tests skip in a bare checkout: the piano renderer lives in the companion embers-piano project beside this one, and the session-record tests need a recorded sessions folder.
+Current state: 128 tests, with one recorded failure, `test_probe_clean_render_has_no_findings`. On one faithful two-part piano render, a single high note (G5) whose attack is masked by the lower part still sounding reads about 10.7 dB softer than written and draws one dynamics finding. Every planted loudness fault is caught and named correctly. The limit is recorded rather than tuned away, because fitting the threshold to that note would make the judgment less trustworthy everywhere else.
 
 ## Security
 

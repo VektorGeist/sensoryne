@@ -1,7 +1,7 @@
 """mcp_server.py - Sensoryne MCP server.
 
 A Model Context Protocol server over stdio that exposes
-Sensoryne's six tools to a host. The server is a front door
+Sensoryne's nine tools, six for the working model and three for the judge, to a host. The server is a front door
 only: it lists the tools, passes arguments through unchanged,
 dispatches each call to stage2.tools.dispatch, and returns
 the result unchanged. It opens no sessions, imposes no order,

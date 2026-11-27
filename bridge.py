@@ -2,7 +2,7 @@
 
 A user directs Muse Ember to create something. Ember is the
 maker. While it works, Ember calls tools: Sensoryne through
-its MCP front door (mcp_server.py, which exposes the six
+its MCP front door (mcp_server.py, which exposes the nine
 sensoryne_ tools). This bridge carries the user's
 direction to Ember, carries Ember's tool calls to the
 servers, and carries the results back.
