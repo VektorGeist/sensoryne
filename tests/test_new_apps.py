@@ -239,7 +239,16 @@ class AnimationTests(unittest.TestCase):
             )
             self.assertTrue(_check(block, "frame_count_matches")["held"])
             self.assertTrue(_check(block, "keyframes_inside_duration")["held"])
+            self.assertTrue(_check(block, "keyframe_time_order")["held"])
             self.assertTrue(_check(block, "easings_named")["held"])
+
+    def test_out_of_duration_and_unordered_keyframes_are_accepted_and_reported(self):
+        artifact = self._artifact()
+        artifact["elements"][0]["keyframes"][1]["time"] = 3.0
+        self.assertEqual(animation_validate(artifact), [])
+        block = animation_invariants.evaluate_invariants(artifact, {})
+        self.assertFalse(_check(block, "keyframes_inside_duration")["held"])
+        self.assertFalse(_check(block, "keyframe_time_order")["held"])
 
     def test_each_planted_fault_is_detected(self):
         artifact = self._artifact()
@@ -378,6 +387,19 @@ class SoundDesignTests(unittest.TestCase):
             self.assertTrue(_check(block, "delivered_event_count_matches")["held"])
             self.assertTrue(_check(block, "events_within_duration")["held"])
             self.assertTrue(_check(block, "realized_onsets_present")["held"])
+
+    def test_event_ending_after_duration_is_accepted_and_reported(self):
+        artifact = self._artifact()
+        artifact["events"][1]["start"] = 4.5
+        artifact["events"][1]["duration"] = 1.0
+        self.assertEqual(sound_validate(artifact), [])
+        block = sound_invariants.evaluate_invariants(
+            artifact,
+            {"delivered_events": copy.deepcopy(artifact["events"])},
+        )
+        within = _check(block, "events_within_duration")
+        self.assertFalse(within["held"])
+
 
     def test_each_planted_fault_is_detected(self):
         artifact = self._artifact()

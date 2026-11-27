@@ -69,30 +69,57 @@ def _music_score(velocity=0.4):
     }
 
 
+REMOVED_MUSIC_IDS = [
+    "total_duration_measured",
+    "effective_velocity_caps",
+    "harmony_at_or_after_8",
+]
+
+REMOVED_STORY_IDS = [
+    "section_shares",
+]
+
+
 class MusicInvariantTests(unittest.TestCase):
     def test_valid_score_holds(self):
         block = music_invariants.evaluate_invariants(_music_score(), {})
         _assert_summary(self, block)
-        self.assertTrue(_check(block, "total_duration_15_20")["held"])
-        self.assertTrue(_check(block, "harmony_at_or_after_8")["held"])
-        self.assertTrue(_check(block, "effective_velocity_caps")["held"])
+        # The removed template judgments appear in no music
+        # evidence document.
+        ids = [entry["id"] for entry in block["checked"]]
+        for removed in REMOVED_MUSIC_IDS:
+            self.assertNotIn(removed, ids)
         self.assertTrue(_check(block, "notes_in_instrument_range")["held"])
         counts = _check(block, "note_count_per_part")["value"]
         self.assertEqual(counts, {"melody": 2, "harmony": 2, "bass": 1})
+        # With no comparison heard, notes heard of written is
+        # reported per part against the notes written.
+        heard = _check(block, "notes_heard_of_written")
+        self.assertFalse(heard["held"])
+        self.assertEqual(
+            heard["value"],
+            [
+                {"part": "melody", "notes_written": 2, "notes_heard": 0},
+                {"part": "harmony", "notes_written": 2, "notes_heard": 0},
+                {"part": "bass", "notes_written": 1, "notes_heard": 0},
+            ],
+        )
 
     def test_faulted_score_breaks_caps_and_duration(self):
+        # The template caps and duration judgments are gone:
+        # a loud, short score is accepted and reported only
+        # through the comparison-derived coverage.
         artifact = _music_score(velocity=0.9)
         artifact["parts"][0]["notes"] = artifact["parts"][0]["notes"][:1]
         artifact["parts"][1]["notes"] = artifact["parts"][1]["notes"][:1]
         block = music_invariants.evaluate_invariants(artifact, {})
         _assert_summary(self, block)
-        caps = _check(block, "effective_velocity_caps")
-        self.assertFalse(caps["held"])
-        self.assertEqual(caps["violations"][0]["part"], "melody")
-        self.assertEqual(caps["violations"][0]["start"], 0.0)
-        self.assertEqual(caps["violations"][0]["midi"], 72)
-        self.assertFalse(_check(block, "total_duration_15_20")["held"])
-        self.assertFalse(_check(block, "harmony_at_or_after_8")["held"])
+        ids = [entry["id"] for entry in block["checked"]]
+        for removed in REMOVED_MUSIC_IDS:
+            self.assertNotIn(removed, ids)
+        self.assertTrue(_check(block, "notes_in_instrument_range")["held"])
+        counts = _check(block, "note_count_per_part")["value"]
+        self.assertEqual(counts, {"melody": 1, "harmony": 1, "bass": 1})
 
     def test_out_of_range_note_is_named(self):
         artifact = _music_score()
@@ -113,6 +140,7 @@ class PoetryInvariantTests(unittest.TestCase):
         _assert_summary(self, block)
         self.assertTrue(_check(block, "line_count")["held"])
         self.assertTrue(_check(block, "stanza_count")["held"])
+        self.assertTrue(_check(block, "declared_form_match")["held"])
         self.assertTrue(_check(block, "syllable_estimates_match_target")["held"])
 
     def test_faulted_poem_breaks_counts_and_syllables(self):
@@ -124,6 +152,12 @@ class PoetryInvariantTests(unittest.TestCase):
         _assert_summary(self, block)
         self.assertFalse(_check(block, "line_count")["held"])
         self.assertFalse(_check(block, "stanza_count")["held"])
+        declared = _check(block, "declared_form_match")
+        self.assertFalse(declared["held"])
+        self.assertEqual(declared["value"]["stanza_count"], 2)
+        self.assertEqual(declared["value"]["declared_stanzas"], 1)
+        self.assertEqual(declared["value"]["line_count"], 3)
+        self.assertEqual(declared["value"]["declared_line_count"], 2)
         syllables = _check(block, "syllable_estimates_match_target")
         self.assertFalse(syllables["held"])
         self.assertEqual(syllables["violations"][0]["line"], 2)
@@ -145,7 +179,13 @@ class StoryInvariantTests(unittest.TestCase):
         block = story_invariants.evaluate_invariants(artifact, {})
         _assert_summary(self, block)
         self.assertTrue(_check(block, "section_count")["held"])
-        self.assertTrue(_check(block, "section_shares")["held"])
+        self.assertTrue(_check(block, "declared_section_count_match")["held"])
+        # The section_shares tautology is removed as a check:
+        # its honest content lives on as the section_share_off
+        # comparison finding.
+        ids = [entry["id"] for entry in block["checked"]]
+        for removed in REMOVED_STORY_IDS:
+            self.assertNotIn(removed, ids)
         self.assertTrue(_check(block, "promised_events_present")["held"])
 
     def test_faulted_story_breaks_count_and_events(self):
@@ -162,6 +202,13 @@ class StoryInvariantTests(unittest.TestCase):
         block = story_invariants.evaluate_invariants(artifact, {})
         _assert_summary(self, block)
         self.assertFalse(_check(block, "section_count")["held"])
+        declared = _check(block, "declared_section_count_match")
+        self.assertFalse(declared["held"])
+        self.assertEqual(declared["value"]["section_count"], 1)
+        self.assertEqual(declared["value"]["declared_section_count"], 2)
+        ids = [entry["id"] for entry in block["checked"]]
+        for removed in REMOVED_STORY_IDS:
+            self.assertNotIn(removed, ids)
         events = _check(block, "promised_events_present")
         self.assertFalse(events["held"])
         self.assertEqual(events["violations"], ["door", "key"])
@@ -195,6 +242,12 @@ class DrawingInvariantTests(unittest.TestCase):
         block = drawing_invariants.evaluate_invariants(artifact, {})
         _assert_summary(self, block)
         self.assertTrue(_check(block, "required_elements_present")["held"])
+        viewbox = _check(block, "viewbox_present")
+        self.assertTrue(viewbox["held"])
+        self.assertEqual(viewbox["value"], "0 0 100 100")
+        declared = _check(block, "declared_element_ids_presence")
+        self.assertTrue(declared["held"])
+        self.assertEqual(declared["value"], {"a": True, "b": True})
         self.assertTrue(_check(block, "declared_overlap_rules")["held"])
 
     def test_faulted_drawing_breaks_required_and_overlap(self):
@@ -218,7 +271,27 @@ class DrawingInvariantTests(unittest.TestCase):
         required = _check(block, "required_elements_present")
         self.assertFalse(required["held"])
         self.assertEqual(required["violations"], ["c"])
+        declared = _check(block, "declared_element_ids_presence")
+        self.assertFalse(declared["held"])
+        self.assertEqual(declared["value"], {"a": True, "b": True, "c": False})
         self.assertFalse(_check(block, "declared_overlap_rules")["held"])
+
+    def test_missing_viewbox_is_reported_not_rejected(self):
+        svg = (
+            '<svg xmlns="http://www.w3.org/2000/svg">'
+            '<rect id="a" x="0" y="0" width="20" height="20"/>'
+            "</svg>"
+        )
+        artifact = self._artifact(
+            svg,
+            [{"id": "a", "kind": "shape", "description": "first"}],
+        )
+        block = drawing_invariants.evaluate_invariants(artifact, {})
+        _assert_summary(self, block)
+        viewbox = _check(block, "viewbox_present")
+        self.assertFalse(viewbox["held"])
+        self.assertIsNone(viewbox["value"])
+        self.assertEqual(viewbox["violations"], [{"viewBox": None}])
 
 
 class CodeInvariantTests(unittest.TestCase):
@@ -236,6 +309,12 @@ class CodeInvariantTests(unittest.TestCase):
         )
         _assert_summary(self, block)
         self.assertTrue(_check(block, "tests_still_defined")["held"])
+        self.assertTrue(_check(block, "test_count_stated")["held"])
+        self.assertEqual(_check(block, "test_count_stated")["value"], 1)
+        self.assertTrue(_check(block, "tests_with_expected_output")["held"])
+        self.assertEqual(_check(block, "tests_with_expected_output")["value"], 1)
+        self.assertTrue(_check(block, "purpose_stated")["held"])
+        self.assertTrue(_check(block, "purpose_stated")["value"])
         self.assertTrue(_check(block, "purpose_unchanged")["held"])
         self.assertTrue(_check(block, "entry_point_present")["held"])
 
@@ -249,9 +328,26 @@ class CodeInvariantTests(unittest.TestCase):
         )
         _assert_summary(self, block)
         self.assertFalse(_check(block, "tests_still_defined")["held"])
+        measured = _check(block, "tests_with_expected_output")
+        # The judgment "at least one stated test states an expected
+        # output" does not hold when the only test states none.
+        self.assertFalse(measured["held"])
+        self.assertEqual(measured["value"], 0)
         purpose = _check(block, "purpose_unchanged")
         self.assertFalse(purpose["held"])
         self.assertEqual(purpose["violations"][0]["original"], "print hi")
+
+    def test_unstated_tests_and_purpose_are_reported(self):
+        artifact = {
+            "files": [{"name": "main.py", "text": "print('hi')\n"}],
+        }
+        block = code_invariants.evaluate_invariants(artifact, {})
+        _assert_summary(self, block)
+        self.assertEqual(_check(block, "test_count_stated")["value"], 0)
+        self.assertEqual(_check(block, "tests_with_expected_output")["value"], 0)
+        stated = _check(block, "purpose_stated")
+        self.assertFalse(stated["held"])
+        self.assertIsNone(stated["value"])
 
 
 class TypographyInvariantTests(unittest.TestCase):
@@ -308,6 +404,7 @@ class AnimationInvariantTests(unittest.TestCase):
         _assert_summary(self, block)
         self.assertTrue(_check(block, "frame_count_matches")["held"])
         self.assertTrue(_check(block, "keyframes_inside_duration")["held"])
+        self.assertTrue(_check(block, "keyframe_time_order")["held"])
         self.assertTrue(_check(block, "easings_named")["held"])
         self.assertTrue(_check(block, "loop_final_matches_first")["held"])
 
@@ -323,6 +420,16 @@ class AnimationInvariantTests(unittest.TestCase):
         self.assertFalse(_check(block, "keyframes_inside_duration")["held"])
         self.assertFalse(_check(block, "easings_named")["held"])
         self.assertFalse(_check(block, "loop_final_matches_first")["held"])
+
+    def test_out_of_order_keyframes_are_reported(self):
+        artifact = self._artifact()
+        track = artifact["elements"][0]["keyframes"]
+        artifact["elements"][0]["keyframes"] = [track[1], track[0]]
+        block = animation_invariants.evaluate_invariants(artifact, {})
+        _assert_summary(self, block)
+        order = _check(block, "keyframe_time_order")
+        self.assertFalse(order["held"])
+        self.assertEqual(order["violations"][0]["times"], [2.0, 0.0])
 
 
 class SoundDesignInvariantTests(unittest.TestCase):
