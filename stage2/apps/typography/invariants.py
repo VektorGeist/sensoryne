@@ -3,6 +3,11 @@
 Box invariants are evaluated on realized boxes from the
 render record when the renderer supplies them, and fall back
 to declared boxes only when no realized record exists.
+
+Coverage is comparison-derived: declared blocks realized
+at their declared placements, of blocks declared.  Nothing
+is covered by construction: absent comparison means no
+blocks realized at their declared placements.
 """
 from collections import Counter
 
@@ -14,6 +19,27 @@ def _elements(a):
 
 def _page(a):
     return a.get("page", {}) if isinstance(a, dict) and isinstance(a.get("page"), dict) else {}
+
+def _comparison_of(evidence, render_record):
+    for source in (evidence, render_record):
+        if isinstance(source, dict):
+            comp = source.get("comparison")
+            if isinstance(comp, dict):
+                return comp
+            full = source.get("full")
+            if isinstance(full, dict) and isinstance(full.get("comparison"), dict):
+                return full["comparison"]
+    return None
+
+def _comparison(artifact, render_record, evidence):
+    comp = _comparison_of(evidence, render_record)
+    if isinstance(comp, dict):
+        return comp
+    try:
+        from .comparison import compute_comparison
+        return compute_comparison(artifact, render_record, evidence)
+    except Exception:
+        return None
 
 def _boxes(artifact, render_record):
     realized = {}
@@ -46,12 +72,17 @@ def evaluate_invariants(artifact, render_record, evidence=None):
     elements = _elements(artifact)
     boxes, realized = _boxes(artifact, render_record)
     source = "realized" if realized else "declared"
-    inside_bad = []
-    for eid, box in boxes.items():
-        x = box["x"]; y = box["y"]; w = box["width"]; h = box["height"]
-        if pw and ph and not (x >= 0 and y >= 0 and x + w <= pw and y + h <= ph):
-            inside_bad.append({"id": eid, "box": [x, y, w, h], "source": source})
-    checked = [_c("elements_inside_page", "Every element %s box lies inside the page bounds." % source, not inside_bad, {"page_width": pw, "page_height": ph, "source": source}, inside_bad)]
+    # Without a stated page size the inside-page judgment cannot be
+    # evaluated; it is reported as not held rather than vacuously held.
+    if not (pw and ph):
+        checked = [_c("elements_inside_page", "Every element %s box lies inside the page bounds." % source, False, {"page_width": pw, "page_height": ph, "source": source}, [{"reason": "no stated page size"}])]
+    else:
+        inside_bad = []
+        for eid, box in boxes.items():
+            x = box["x"]; y = box["y"]; w = box["width"]; h = box["height"]
+            if not (x >= 0 and y >= 0 and x + w <= pw and y + h <= ph):
+                inside_bad.append({"id": eid, "box": [x, y, w, h], "source": source})
+        checked = [_c("elements_inside_page", "Every element %s box lies inside the page bounds." % source, not inside_bad, {"page_width": pw, "page_height": ph, "source": source}, inside_bad)]
     heading = _median([float(e.get("font_size") or 0) for e in elements if isinstance(e, dict) and e.get("kind") == "heading"])
     body = _median([float(e.get("font_size") or 0) for e in elements if isinstance(e, dict) and e.get("kind") == "body"])
     caption = _median([float(e.get("font_size") or 0) for e in elements if isinstance(e, dict) and e.get("kind") == "caption"])
@@ -65,17 +96,21 @@ def evaluate_invariants(artifact, render_record, evidence=None):
     return {"checked": checked, "summary": {"total_checked": len(checked), "held": sum(1 for c in checked if c["held"]), "broken": sum(1 for c in checked if not c["held"])}}
 
 def reliability_block():
-    return {"instrument": "raster analyzer", "limits": ["Rasterization resolution is the rendered image dimensions in pixels.", "Realized text boxes are recorded from the drawing calls; font metrics depend on the available font.", "Contrast uses sRGB relative luminance against the most common image color."]}
+    return {"instrument": "raster analyzer", "limits": ["Rasterization resolution is the rendered image dimensions in pixels.", "Realized text boxes are recorded from the drawing calls; font metrics depend on the available font.", "Contrast uses sRGB relative luminance against the most common image color.", "Comparison box tolerance is 0.5 pixels: a realized box whose placement departs from its declared placement by more than 0.5 is a box_displaced finding; for text the placement expected is the origin its alignment places inside the declared box, and for image blocks the declared size is judged as well; measured text whose extent exceeds its declared box by more than 0.5 is a text_overflow finding."]}
 
 def objective_coverage(artifact, render_record, evidence=None):
-    out = []
-    page = _page(artifact)
-    if page.get("width") and page.get("height"):
-        out.append({"item": "page size %s by %s" % (page.get("width"), page.get("height")), "present": True})
-    elements = _elements(artifact)
-    kinds = {e.get("kind") for e in elements if isinstance(e, dict)}
-    for kind in ("heading", "body", "caption", "image"):
-        if kind in kinds:
-            out.append({"item": "element kind %s" % kind, "present": True})
-    out.append({"item": "element count %d" % len(elements), "present": len(elements) > 0})
-    return out
+    # Coverage derived from the comparison: declared blocks
+    # realized at their declared placements, of blocks
+    # declared.  Nothing is covered by construction: absent
+    # comparison means no blocks realized as declared.
+    comp = _comparison(artifact, render_record, evidence)
+    if isinstance(comp, dict) and comp.get("blocks_realized_at_declared_placements") is not None and comp.get("blocks_declared") is not None:
+        realized = comp.get("blocks_realized_at_declared_placements")
+        declared = comp.get("blocks_declared")
+    elif isinstance(comp, dict) and comp.get("realized_at_declared_placements") is not None and comp.get("blocks_declared") is not None:
+        realized = comp.get("realized_at_declared_placements")
+        declared = comp.get("blocks_declared")
+    else:
+        declared = len([e.get("id") for e in _elements(artifact) if isinstance(e, dict) and e.get("id")])
+        realized = 0
+    return [{"item": "declared blocks realized at their declared placements, %s of %s" % (realized, declared), "covered": bool(declared) and realized == declared}]

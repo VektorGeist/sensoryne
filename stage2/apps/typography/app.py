@@ -130,6 +130,8 @@ Structure record:
 OUTPUT (drawn page, evidence):
 %s
 
+The evidence's comparison section is Sensoryne's judgment of the delivered layout against the written declarations and the objective, and the decision must state how it answers that judgment.
+
 Judge the drawn page against what was written and the objective.
 
 %s
