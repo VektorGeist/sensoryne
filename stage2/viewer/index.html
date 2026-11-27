@@ -119,6 +119,8 @@ details .detail-body{padding:0 var(--space-4) var(--space-4);border-top:1px soli
 .inv-entry.held{border-left:3px solid var(--teal)}
 .inv-entry.broken{border-left:3px solid var(--brass)}
 .inv-entry .iid{font-family:var(--mono);font-size:var(--text-sm)}
+.judgment-card{border-left:3px solid var(--teal)}
+.judgment-card .judgment-entry{border:1px solid var(--line2);border-left:3px solid var(--brass);border-radius:var(--radius-sm);padding:var(--space-2) var(--space-3);margin-bottom:var(--space-2);background:var(--bg2)}
 .ground-truth-box{border:2px dashed var(--brass);border-radius:var(--radius);padding:var(--space-3);margin:var(--space-3) 0;background:var(--panel)}
 .event-timeline-wrap{background:var(--panel);border:1px solid var(--line2);border-radius:var(--radius);padding:var(--space-4)}
 .event-timeline-status{display:flex;gap:var(--space-2);flex-wrap:wrap;align-items:center;margin-bottom:var(--space-3)}
@@ -356,6 +358,11 @@ body.demo .demo-banner{display:block}
         <pre id="full-evidence">No evidence recorded for this iteration.</pre>
       </div>
     </details>
+
+    <section class="card judgment-card" aria-label="Judgment">
+      <h2>Judgment</h2>
+      <div id="judgment"></div>
+    </section>
 
     <section class="card" aria-label="Session activity">
       <h2>Session activity (recorded events)</h2>
@@ -1072,6 +1079,21 @@ function faultText(f){
   if(isObj(f)) return {desc:f.description||f.message||JSON.stringify(f),where:f.where||""};
   return {desc:String(f),where:""};
 }
+function renderJudgment(){
+  var box=el("judgment");
+  if(!box||!current) return;
+  var judgments=current.events.filter(function(e){return e.event==="judgment";});
+  if(!judgments.length){ box.innerHTML='<p class="missing">No judgment recorded for this session.</p>'; return; }
+  var words={good:"good",mixed:"mixed",not_good:"not good"};
+  box.innerHTML=judgments.map(function(e){
+    var v=e.verdict||{};
+    var line=words[v.bottom_line]||String(v.bottom_line||"not recorded");
+    var h='<div class="judgment-entry"><p><strong>'+esc(line)+'</strong></p><p>'+esc(v.judgment||"")+'</p>';
+    if(Array.isArray(v.strengths)&&v.strengths.length) h+='<h4>Strengths</h4><ul>'+v.strengths.map(function(s){return '<li>'+esc(s)+'</li>';}).join("")+'</ul>';
+    if(Array.isArray(v.weaknesses)&&v.weaknesses.length) h+='<h4>Weaknesses</h4><ul>'+v.weaknesses.map(function(s){return '<li>'+esc(s)+'</li>';}).join("")+'</ul>';
+    return h+'</div>';
+  }).join("");
+}
 function renderFindings(){
   var box=el("findings");
   var d=eventFor("decision",iteration)||{};
@@ -1432,7 +1454,7 @@ function render(){
   if(!current) return;
   appType=inferApp();
   renderHeader(); renderSessions(); renderTimeline(); renderArtifact();
-  renderEvidence(); renderVisualPanel(); renderFindings(); renderActivity();
+  renderEvidence(); renderVisualPanel(); renderFindings(); renderJudgment(); renderActivity();
   if(!el("compare-panel").hidden) renderCompare();
   EventTimeline.updateState();
 }
