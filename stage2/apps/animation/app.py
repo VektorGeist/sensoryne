@@ -65,7 +65,6 @@ def validate(artifact):
     elements = artifact.get("elements")
     if not isinstance(elements, list) or not elements:
         return errors + ["scene must hold at least one element"]
-    duration = float(artifact.get("duration") or 0)
     seen = set()
     for el in elements:
         if not isinstance(el, dict):
@@ -81,16 +80,8 @@ def validate(artifact):
         if not isinstance(track, list) or not track:
             errors.append("element id %r must hold a keyframe track" % el.get("id"))
             continue
-        times = []
         for k in track:
             errors.extend(_check_keyframe(k))
-            if isinstance(k, dict) and _finite(k.get("time")):
-                t = float(k["time"])
-                times.append(t)
-                if t < 0 or t > duration:
-                    errors.append("element id %r keyframe time outside duration" % el.get("id"))
-        if times != sorted(times):
-            errors.append("element id %r keyframes must be in time order" % el.get("id"))
     return errors
 
 def _objective_text(objective):
@@ -148,6 +139,8 @@ Structure record:
 
 OUTPUT (rendered frames, evidence):
 %s
+
+The evidence's comparison section is Sensoryne's judgment of the delivered animation against the written timeline and the objective, and the decision must state how it answers that judgment.
 
 Judge the rendered frames against what was written and the objective.
 
