@@ -8,6 +8,25 @@ call counts are read from each run's own spend.jsonl inside
 its run directory. Each session's structure record and each
 stored delta are read from the session_start, perception, and
 render entries of its history.jsonl.
+
+The page (stage2/viewer/index.html) requires three server
+behaviours beyond the original contract, all implemented here
+without changing any session data:
+
+* ``--sessions-root PATH`` (or the SENSORYNE_SESSIONS_ROOT
+  environment variable) selects the sessions folder to serve,
+  so the proof-run sessions can be viewed without moving
+  them. The default remains ./sessions.
+* Extensionless render files (render_1, render_1.png for
+  typography, robustness/*.wav, frame PNGs) are served with
+  a content type inferred from the render kind recorded in
+  the session history when the file name has no extension.
+* A single trailing .png/.wav suffix may be omitted in a
+  /sessions/ URL: /sessions/<dir>/render_1 serves the file
+  render_1.png when only that file exists. This is how the
+  renderer's own save path is addressed.
+* Extensionless session files such as history.jsonl are
+  served as application/json.
 """
 
 import argparse
@@ -22,8 +41,18 @@ _INDEX_PATH = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "viewer", "index.html"
 )
 
+# Set by main() from --sessions-root / the environment. Kept as a
+# module global so _Handler (which has no config of its own) can
+# resolve the root the same way _discover_sessions does.
+_SESSIONS_ROOT_OVERRIDE = None
+
 
 def _sessions_root():
+    if _SESSIONS_ROOT_OVERRIDE:
+        return _SESSIONS_ROOT_OVERRIDE
+    env = os.environ.get("SENSORYNE_SESSIONS_ROOT")
+    if env:
+        return env
     candidate = os.path.join(_PROJECT_ROOT, "sessions")
     return candidate if os.path.isdir(candidate) else os.path.join(os.getcwd(), "sessions")
 
@@ -65,6 +94,82 @@ def _find_run_dir(sessions_root, dirpath):
         if parent == current:
             return root
         current = parent
+
+
+# Render-kind -> content type, for extensionless render files.
+# Derived from the renderer contract in the *-renderer modules:
+# audio renders are WAV, frame/image renders are PNG, text
+# renders are plain text, and the code render is a directory.
+_KIND_CONTENT_TYPES = {
+    "audio": "audio/wav",
+    "image": "image/png",
+    "frames": "image/png",
+    "text": "text/plain; charset=utf-8",
+    "files": "application/octet-stream",
+}
+
+
+def _render_kind_for(rel_path):
+    """Best-effort render kind for a /sessions/ relative path.
+
+    Reads the owning session's history.jsonl render entry whose
+    recorded path ends with the requested file name. Returns
+    None when no kind can be determined; the caller then falls
+    back to the extension guess.
+    """
+    parts = rel_path.split("/")
+    if len(parts) < 2:
+        return None
+    target_name = parts[-1]
+    if len(parts) >= 3 and parts[-2] == "robustness":
+        session_dir = os.path.join(_sessions_root(), parts[0])
+    else:
+        session_dir = os.path.join(_sessions_root(), *parts[:-1])
+    history_path = os.path.join(session_dir, "history.jsonl")
+    if not os.path.isfile(history_path):
+        return None
+    try:
+        with open(history_path, "r", encoding="utf-8") as handle:
+            for line in handle:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    entry = json.loads(line)
+                except ValueError:
+                    continue
+                if entry.get("event") != "render":
+                    continue
+                info = entry.get("render_info") or {}
+                if not isinstance(info, dict):
+                    continue
+                recorded = str(info.get("path", "")).replace("\\", "/")
+                if recorded.endswith("/" + target_name) or recorded == target_name:
+                    return info.get("kind")
+                # Frame files: the recorded path is the stem.
+                if info.get("kind") == "frames" and target_name.startswith(
+                    os.path.basename(recorded) + "_frame_"
+                ):
+                    return "frames"
+    except OSError:
+        return None
+    return None
+
+
+def _content_type_for(path, rel_path):
+    # history.jsonl and other .jsonl records are JSON.
+    if path.endswith(".jsonl") or path.endswith(".json"):
+        return "application/json"
+    content_type, _ = mimetypes.guess_type(path)
+    if content_type:
+        return content_type
+    # Extensionless render file: use the recorded render kind.
+    kind = _render_kind_for(rel_path)
+    if kind in _KIND_CONTENT_TYPES:
+        return _KIND_CONTENT_TYPES[kind]
+    # Robustness WAVs and other extensioned audio already have a
+    # guessed type; anything else stays octet-stream.
+    return "application/octet-stream"
 
 
 def _discover_sessions(sessions_root):
@@ -154,15 +259,13 @@ class _Handler(BaseHTTPRequestHandler):
     def log_message(self, *args):
         pass
 
-    def _send_file(self, path):
+    def _send_file(self, path, rel_path=None):
         if not os.path.isfile(path):
             self.send_error(404)
             return
-        content_type, _ = mimetypes.guess_type(path)
+        content_type = _content_type_for(path, rel_path or "")
         self.send_response(200)
-        self.send_header(
-            "Content-Type", content_type or "application/octet-stream"
-        )
+        self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(os.path.getsize(path)))
         self.end_headers()
         with open(path, "rb") as handle:
@@ -194,18 +297,39 @@ class _Handler(BaseHTTPRequestHandler):
             if not _is_within(root, target):
                 self.send_error(403)
                 return
-            self._send_file(target)
+            if os.path.isfile(target):
+                self._send_file(target, rel)
+                return
+            # One optional trailing media suffix: renderers save
+            # e.g. render_1.png for an extensionless render_1
+            # path, and wav renders may be addressed either way.
+            for suffix in (".png", ".wav"):
+                candidate = target + suffix
+                if not _is_within(root, candidate):
+                    continue
+                if os.path.isfile(candidate):
+                    self._send_file(candidate, rel)
+                    return
+            self.send_error(404)
             return
         self.send_error(404)
 
 
 def main(argv=None):
+    global _SESSIONS_ROOT_OVERRIDE
     parser = argparse.ArgumentParser(description="Sensoryne replay viewer")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8000)
+    parser.add_argument(
+        "--sessions-root",
+        default=None,
+        help="sessions folder to serve (default: ./sessions)",
+    )
     args = parser.parse_args(argv)
+    if args.sessions_root:
+        _SESSIONS_ROOT_OVERRIDE = os.path.abspath(args.sessions_root)
     server = ThreadingHTTPServer((args.host, args.port), _Handler)
-    print("Sensoryne viewer on http://%s:%d/" % (args.host, args.port))
+    print("Sensoryne viewer on http://%s:%d/ (sessions: %s)" % (args.host, args.port, _sessions_root()))
     try:
         server.serve_forever()
     except KeyboardInterrupt:

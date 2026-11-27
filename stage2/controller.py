@@ -44,6 +44,7 @@ from datetime import datetime, timezone
 
 from . import decision as decision_module
 from .delta import compute_delta
+from .shape import shape_document, shape_evidence
 from .store import ArtifactStore
 
 
@@ -146,6 +147,15 @@ def _renderer(name, pending):
 
 
 def _extras(app):
+    # The application's own invariants module is preferred when
+    # it exists, so that its judgments, reliability block, and
+    # coverage are the ones reported. An application that
+    # carries those functions on itself is its own extras.
+    if getattr(app, "NAME", None):
+        try:
+            return importlib.import_module("stage2.apps.%s.invariants" % app.NAME)
+        except Exception:
+            pass
     if hasattr(app, "evaluate_invariants") or hasattr(app, "reliability_block") or hasattr(app, "objective_coverage"):
         return app
     name = getattr(app, "NAME", None)
@@ -206,6 +216,43 @@ def _update_src(store, aid, src, obj):
     from .store import _write_json
     _write_json(store._record_path(aid), r)
     return r
+
+
+def _comparison(ctx, art, rec, ev):
+    """The comparison block for this application, if it has one.
+
+    Preferred from the application's own invariants module,
+    then from a comparison module beside the application, then
+    from the application module itself. Returns None when the
+    application has no comparison, so applications without one
+    store no comparison key.
+    """
+    name = getattr(ctx["app"], "NAME", None)
+    candidates = []
+    seen = set()
+    for modname in (
+        ("stage2.apps.%s.invariants" % name) if name else None,
+        ("stage2.apps.%s.comparison" % name) if name else None,
+    ):
+        if modname and modname not in seen:
+            seen.add(modname)
+            try:
+                candidates.append(importlib.import_module(modname))
+            except Exception:
+                pass
+    candidates.append(ctx["app"])
+    for mod in candidates:
+        fn = getattr(mod, "compute_comparison", None) or getattr(mod, "build_comparison", None) or getattr(mod, "comparison_block", None)
+        if fn is None:
+            continue
+        try:
+            return fn(_with_obj(ctx, art), rec, ev)
+        except TypeError:
+            try:
+                return fn(_with_obj(ctx, art), rec)
+            except TypeError:
+                return fn(_with_obj(ctx, art))
+    return None
 
 
 def _invariants(ctx, art, rec, ev):
@@ -389,15 +436,25 @@ def _render_perceive(ctx):
     rel = _reliability(ctx)
     cov = _coverage(ctx, src, rec, ev)
     rob = _robustness(ctx, src, rec, ev) if ev is not None else None
+    # The comparison is computed from the hearing's evidence
+    # (and the performance record) against the written work,
+    # and attached to both the performance record and the
+    # evidence before either is stored, so the stored record
+    # and the returned copy carry the same block.
+    comp = _comparison(ctx, src, rec, ev)
     rec["invariants"] = inv
     rec["reliability"] = rel
     rec["objective_coverage"] = cov
+    if comp is not None:
+        rec["comparison"] = comp
     if rob is not None:
         rec["robustness"] = rob
     if ev is not None:
         ev["invariants"] = inv
         ev["reliability"] = rel
         ev["objective_coverage"] = cov
+        if comp is not None:
+            ev["comparison"] = comp
         if rob is not None:
             ev["robustness"] = rob
     vid = _next_version_id(ctx["store"], ctx["artifact_id"])
@@ -465,15 +522,65 @@ def open_session(reg, args):
     renderer = _renderer(application, pending)
     store = pending.get("store") or ArtifactStore(pending.get("store_root") or os.path.join(os.getcwd(), "sessions", "artifacts"))
     root = str(pending.get("session_root") or os.path.join(os.getcwd(), "sessions"))
-    counter = int(getattr(reg, "_session_counter", 0)) + 1
-    try:
-        reg._session_counter = counter
-    except Exception:
-        pass
-    sid = pending.get("session_id") or "%s-%s-%d" % (application, condition, counter)
+    # Mint the session id from what is already on disk, not
+    # from an in-memory counter alone, so a fresh process
+    # cannot reuse an earlier session's id. Both the session
+    # root and the artifact store root are checked, and the
+    # candidate moves forward until it names neither an
+    # existing session directory nor an existing artifact.
+    def _on_disk_ids():
+        ids = set()
+        for base in (root, getattr(store, "root", None)):
+            if base and os.path.isdir(str(base)):
+                try:
+                    ids.update(os.listdir(str(base)))
+                except OSError:
+                    pass
+        try:
+            ids.update((getattr(reg, "sessions", {}) or {}).keys())
+        except Exception:
+            pass
+        return ids
+
+    def _minted_id():
+        prefix = "%s-%s-" % (application, condition)
+        existing = _on_disk_ids()
+        highest = 0
+        try:
+            highest = max(highest, int(getattr(reg, "_session_counter", 0) or 0))
+        except Exception:
+            pass
+        for name in existing:
+            if isinstance(name, str) and name.startswith(prefix):
+                suffix = name[len(prefix):]
+                if suffix.isdigit():
+                    highest = max(highest, int(suffix))
+        number = highest + 1
+        while "%s-%s-%d" % (application, condition, number) in existing:
+            number += 1
+        try:
+            reg._session_counter = number
+        except Exception:
+            pass
+        return "%s-%s-%d" % (application, condition, number)
+
+    sid = pending.get("session_id")
+    if not sid or sid in _on_disk_ids():
+        sid = _minted_id()
     sdir = os.path.join(root, sid)
-    os.makedirs(sdir, exist_ok=True)
     aid = pending.get("artifact_id") or sid
+    if aid != sid:
+        # An explicit artifact id that already names an
+        # artifact on disk would append this session's
+        # versions to an earlier session's artifact; give
+        # this session its own artifact instead.
+        try:
+            _exists = os.path.exists(store._record_path(aid))
+        except Exception:
+            _exists = aid in _on_disk_ids()
+        if _exists:
+            aid = sid
+    os.makedirs(sdir, exist_ok=True)
     faults = copy.deepcopy(list(pending.get("faults") or []))
     gt = pending.get("ground_truth")
     if gt is None:
@@ -522,7 +629,10 @@ def submit_work(ctx, artifact):
     else:
         result = {"valid": True, "session_id": ctx["session_id"], "iteration": ctx["iteration"], "structure_record": structure, "artifact": copy.deepcopy(ctx["current_source"]), "perception": "perception_skipped"}
     h.log("tool_result", tool="sensoryne_submit_work", session_id=ctx["session_id"], valid=True, iteration=ctx["iteration"])
-    return result
+    # The stored session record keeps the complete evidence
+    # (logged in _render_perceive); only the copy handed back
+    # through this return is shaped.
+    return shape_document(result)
 
 
 def _apply_atomic(ctx, revisions, log=True):
@@ -630,7 +740,9 @@ def submit_decision(ctx, decision):
         _end(ctx, "iteration_limit", parsed.get("assessment"))
         result["ended_by"] = "iteration_limit"
     h.log("tool_result", tool="sensoryne_submit_decision", session_id=ctx["session_id"], iteration=ctx["iteration"], ended_by=ctx.get("ended_by"))
-    return result
+    # The stored session record keeps the complete evidence;
+    # only the copy handed back through this return is shaped.
+    return shape_document(result)
 
 
 def probe(ctx, decision):
@@ -687,6 +799,9 @@ def probe(ctx, decision):
         ev["invariants"] = _invariants(ctx, hypo, rec, ev)
         ev["reliability"] = rel
         ev["objective_coverage"] = _coverage(ctx, hypo, rec, ev)
+        _comp = _comparison(ctx, hypo, rec, ev)
+        if _comp is not None:
+            ev["comparison"] = _comp
         next_id = "v%d-probe" % (_version_number(ctx.get("current_version_id")) + 1)
         ev["delta"] = _rooted_measurements(compute_delta(ctx.get("current_version_id") or "v1", next_id, ctx.get("current_measurements") or {}, ev.get("measurements", {}), ctx.get("current_structure") or {}, structure))
         ev["probe"] = True
@@ -696,7 +811,14 @@ def probe(ctx, decision):
     else:
         result = {"probe": True, "structure_record": copy.deepcopy(structure), "artifact": copy.deepcopy(hypo), "perception": "perception_skipped", "invariants": inv, "reliability": rel, "objective_coverage": cov}
     h.log("tool_result", tool="sensoryne_probe", session_id=ctx["session_id"], probe=True, valid=True)
-    return result
+    # A probe stores nothing, so there is no stored copy to
+    # keep whole: the returned hypothetical evidence is shaped
+    # as a bare evidence document, stating inside itself that
+    # it is a shaped copy and where the complete evidence
+    # lives (the current version's session record).
+    if ctx.get("condition") == "perceptual":
+        return shape_evidence(result)
+    return shape_document(result)
 
 
 def recall_memory(reg, application, limit):
