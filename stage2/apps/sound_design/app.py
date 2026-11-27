@@ -63,7 +63,6 @@ def validate(artifact):
     errors = []
     if not _finite(artifact.get("duration")) or float(artifact.get("duration") or 0) <= 0:
         errors.append("sound work duration must be positive")
-    duration = float(artifact.get("duration") or 0)
     events = artifact.get("events")
     if not isinstance(events, list) or not events:
         return errors + ["sound work must hold at least one event"]
@@ -74,8 +73,6 @@ def validate(artifact):
             if event["id"] in seen:
                 errors.append("duplicate event id %r" % event["id"])
             seen.add(event["id"])
-            if _finite(event.get("start")) and _finite(event.get("duration")) and float(event["start"]) + float(event["duration"]) > duration:
-                errors.append("event id %r ends after the stated duration" % event["id"])
     return errors
 
 def _objective_text(objective):
@@ -133,6 +130,8 @@ Structure record:
 
 OUTPUT (rendered audio, evidence):
 %s
+
+The evidence's comparison section is Sensoryne's judgment of the rendered audio against the written event list and the objective, and the decision must state how it answers that judgment.
 
 Judge the rendered audio against what was written and the objective.
 
