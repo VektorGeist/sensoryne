@@ -367,6 +367,9 @@ def apply_revision(artifact, revision):
         raise ValueError("resulting score failed validation: %s" % "; ".join(errors))
     return revised
 
+def judge_brief():
+    return """Judge this music on melody, harmony, structure, arc, dynamics, and whether the piece achieves what its objective declares. First name the kind of piece from the objective in the pack (symphony, sonata, concerto, piano piece, etude, song, miniature, or whatever the objective declares) and judge the work as that kind of thing. A symphony is judged on its movements or large sections, on thematic material stated and developed across the whole span, on contrast and return, and on whether its length is earned, meaning the material sustains the span rather than filling it. A work that declares itself a symphony and delivers a short single-arc piece has not met its kind, whatever its other merits. The other side holds with equal force: a piece that declares a small kind, a piano miniature, a study, or a short piece, is judged at its own scale and is neither penalized for not being a symphony nor credited as one. Ground every claim in facts in the pack: the written work, the comparison findings, the objective coverage, and the maker's decisions. Where the record carries no fact, say the record does not show it; never invent one. Judge the work itself, not delivery alone: the delivery findings are facts to weigh, and the question is whether the work is good. Record the verdict with bottom_line, judgment, strengths, and weaknesses."""
+
 def apply_revisions(artifact, revisions):
     cur = copy.deepcopy(artifact)
     for r in revisions or []:
