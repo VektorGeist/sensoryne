@@ -257,6 +257,10 @@ def apply_revision(artifact, revision):
         raise ValueError("resulting sound work failed validation: %s" % "; ".join(errors))
     return revised
 
+def judge_brief():
+    return """Judge this sound work on its events, its timing, and the resulting sound picture. Ground every claim in facts in the pack: the written work, the comparison findings, the objective coverage, and the maker's decisions. Where the record carries no fact, say the record does not show it; never invent one. Judge the work itself, not delivery alone: the delivery findings are facts to weigh, and the question is whether the work is good. Record the verdict with bottom_line, judgment, strengths, and weaknesses."""
+
+
 def apply_revisions(artifact, revisions):
     current = copy.deepcopy(artifact)
     for revision in revisions or []:
