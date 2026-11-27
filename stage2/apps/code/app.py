@@ -96,9 +96,9 @@ def _file_name_errors(name):
 
 
 def validate(artifact):
-    """Structure only: at least one file, every file non-empty
-    with a safe relative name, at least one test with an
-    expected output."""
+    """Structure only: an object with a files list, at least
+    one file, every file name a safe relative path, no
+    duplicate file names, every file holding text."""
     errors = []
     if not isinstance(artifact, dict) or "files" not in artifact:
         return ["program must be an object with a 'files' list"]
@@ -124,16 +124,6 @@ def validate(artifact):
                     seen.add(name)
             if not isinstance(entry.get("text"), str) or not entry["text"].strip():
                 errors.append("file %r is empty" % (name,))
-    tests = artifact.get("tests")
-    if not isinstance(tests, list) or not tests:
-        errors.append("program must state at least one test")
-    elif not any(
-        isinstance(test, dict) and "expected" in test and test.get("expected") is not None
-        for test in tests
-    ):
-        errors.append("at least one test must state an expected output")
-    if not isinstance(artifact.get("purpose"), str) or not artifact["purpose"].strip():
-        errors.append("program must state its purpose")
     return errors
 
 
@@ -147,7 +137,7 @@ def composition_prompt(objective):
     return """Write a program meeting the objective's purpose. Answer with the artifact JSON only, in this format and nothing else:
 {"files": [{"name": "main.py", "text": "..."}], "purpose": "what the program is supposed to do", "tests": [{"name": "...", "input": "...", "expected": "..."}]}
 
-File names must be safe relative paths: no absolute path, no parent traversal, no drive letter, no unsafe characters. The tests are stated by you as part of the work: input fed to the program on standard input, expected output. At least one test must state an expected output.
+File names must be safe relative paths: no absolute path, no parent traversal, no drive letter, no unsafe characters. The tests are stated by you as part of the work: input fed to the program on standard input, expected output.
 
 Objective:
 %s
@@ -213,6 +203,8 @@ OUTPUT (what was delivered): the delivered program, with the instrument's full e
 
 Evidence:
 %s
+
+The evidence's comparison section is Sensoryne's judgment of the delivered program against the objective's checks, and the decision must state how it answers that judgment.
 
 State any faults you find, order revisions if needed, and judge whether the delivered work meets the objective.
 
