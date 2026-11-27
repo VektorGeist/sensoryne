@@ -4,7 +4,10 @@ renderer(artifact, out_path, faults): renders the SVG to a PNG
 at the viewBox size using cairosvg, with delivery faults applied
 in the rendering only.  If no SVG renderer is available in the
 environment, say so in those words instead of substituting
-anything.
+anything.  The record carries the fault-applied delivered SVG
+itself, as the code and sound_design renderers carry their
+delivered structures, so the delivered document can be read
+without a rasterizer.
 """
 
 import copy
@@ -105,5 +108,6 @@ def renderer(artifact, out_path, faults):
         "kind": "image",
         "width": width,
         "height": height,
+        "delivered_svg": svg,
         "faults_applied": copy.deepcopy(list(faults or [])),
     }

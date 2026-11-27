@@ -78,5 +78,13 @@ def renderer(artifact, out_path, faults):
         realized[el.get("id")] = {"x": float(tx), "y": float(y), "width": float(tw), "height": float(th)}
     parent = os.path.dirname(os.path.abspath(out_path))
     os.makedirs(parent, exist_ok=True)
-    image.save(out_path)
+    # The session path passes an extensionless render path
+    # (render_<n>); Pillow needs a format, so default to PNG
+    # when no extension is present, as the animation renderer
+    # does for its frames.
+    save_path = str(out_path)
+    if not os.path.splitext(save_path)[1]:
+        save_path = save_path + ".png"
+    image.save(save_path)
+    out_path = save_path
     return {"path": str(out_path), "kind": "image", "width": width, "height": height, "page": page, "delivered_elements": delivered, "realized_boxes": realized, "faults_applied": copy.deepcopy(list(faults or []))}

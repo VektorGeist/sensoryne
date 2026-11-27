@@ -29,6 +29,16 @@ lifetime. A tool error from dispatch is returned as an MCP
 tool error carrying the exception's message; the server does
 not crash. This file reads no credentials and makes no
 network calls.
+
+Music rendering is wired on the host side: the piano and its
+renderer are a separate project that sits beside this project
+folder as ``embers-piano``. When that sibling folder exists,
+it is added to ``sys.path`` so the controller's renderer
+lookup (``music_renderer``) resolves to the sibling's
+renderer, which in turn imports ``piano`` from the same
+folder. No piano code is copied into this project. When the
+sibling is absent, music sessions fail with the import error
+from the renderer lookup, as before.
 """
 
 import asyncio
@@ -37,6 +47,15 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+# Host-side wiring for the music renderer in the sibling
+# embers-piano project. The sibling sits beside this project
+# folder; adding it to sys.path lets "import music_renderer"
+# (and its "from piano import ..." ) resolve there.
+_HERE = os.path.dirname(os.path.abspath(__file__))
+_SIBLING = os.path.join(os.path.dirname(_HERE), "embers-piano")
+if os.path.isdir(_SIBLING) and _SIBLING not in sys.path:
+    sys.path.append(_SIBLING)
 
 from mcp.server import Server
 from mcp.server.stdio import stdio_server

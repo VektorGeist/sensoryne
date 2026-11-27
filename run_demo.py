@@ -23,6 +23,18 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+# Host-side wiring for the music renderer in the sibling
+# embers-piano project (see mcp_server.py). The piano and its
+# renderer are a separate project beside this folder; adding
+# the sibling to sys.path lets "music_renderer" resolve there
+# without copying piano code into this project.
+_SIBLING = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    "embers-piano",
+)
+if os.path.isdir(_SIBLING) and _SIBLING not in sys.path:
+    sys.path.append(_SIBLING)
+
 from stage2.ember import ResponsesClient, SpendLedger, function_call_output
 from stage2.report import build_report
 from stage2.store import ArtifactStore

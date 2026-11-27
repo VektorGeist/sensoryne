@@ -1,68 +1,81 @@
-<p align="center">
-  <img src="sensoryne-icon.webp" alt="Sensoryne" width="220">
-</p>
-
 # Sensoryne
 
-## Project Overview
+**Independent Perceptual Evaluation and Improvement Platform**
 
-Sensoryne is an independent perceptual evaluation and improvement platform, and a creative process for AI. A model makes a creative work. The finished render is handed in. An independent instrument perceives the render and returns evidence. The model criticizes the render against the work's structure record and its objective and revises in addressed operations, repeating until the model judges the work complete. The instrument perceives, the model evaluates and decides, the platform coordinates and preserves the record. Sensoryne makes nothing: rendering happens on the composing side, and the finished render is handed to Sensoryne. Sensoryne hears the render: the instrument inside the application perceives it and returns the evidence. Rendering happens on the composing side. The finished render is handed to Sensoryne.
+![Sensoryne icon](sensoryne-icon.webp)
 
-The platform contains no scoring algorithm. Instruments report the measurable layer only. Every evidence document carries `interpretation: null`. Evidence keeps the outer shape of summary, measurements, and full record, with additional blocks described below.
+A model makes a creative work. Sensoryne perceives the finished render independently, judges it against the work as written and the session's objective, and names what is wrong. The model reads that judgment, revises in addressed operations, and the new render is perceived again. The platform keeps every version, every piece of evidence, and every decision, so the whole process can be replayed and checked.
 
-## Problem
+Sensoryne makes nothing. The work is composed and rendered on the model's side; the finished render is handed in. What Sensoryne supplies is the thing a model cannot supply for itself: an independent judgment of its own output. A model's impression of its work is not evidence, and left alone it accepts its first attempt. Sensoryne exists to break that.
 
-A model that only sees its own source representation cannot detect defects that exist only in what that source renders to. In music, a score can be written one way while the render differs in a part, a passage, or a written note. In text, a delivered page can omit a written line. In a page layout, a drawn picture, an animation, a sound work, or a delivered program, the delivered form can differ from the written form. Evaluation requires an independent sense: something that perceives the rendered output and reports what it perceives, leaving judgment to the model.
+## Project status
 
-## Solution
+Sensoryne is a working research platform, demonstrated end to end and covered by an automated test suite. It is not a finished consumer product.
 
-The model is connected to the platform as a client and calls six tools while it works: `sensoryne_open_session`, `sensoryne_submit_work`, `sensoryne_submit_decision`, `sensoryne_finish_session`, `sensoryne_probe`, and `sensoryne_recall`. The host sends one opening task per session and then executes tool calls only.
+- **Demonstrated:** the full loop (compose, hand in, perceive, judgment, revision, re-perceive, complete) in live sessions for music, poetry, and code, with the before-and-after record preserved in the session store.
+- **Built and test-covered:** all eight applications (music, poetry, story, drawing, code, typography, animation, sound design), each with its own comparison judgment, planted-fault tests, and a replay viewer with one drawn evidence panel per application.
+- **Known limits, stated plainly:** the music dynamics judgment has one recorded limit on dense renders where a note's attack is masked by a louder part still sounding (one test records it; see Testing). Syllable counts in poetry are estimates by a stated rule, never exact. The code execution environment is not a security sandbox (see Security).
 
-The loop, with source kept distinct from render at every step:
+## How it works
 
-1. `sensoryne_open_session` takes application, objective, condition, and test. The platform creates the session record and artifact store entry and returns the application's composition prompt text. In a test session, demo faults are planted from the application's `plant_faults` and ground truth is generated from the fault definitions at planting time.
-2. `sensoryne_submit_work` takes session_id and artifact. The platform validates with the application's `validate`. On validation failure the result returns the failed checks and the retry prompt text, and no version is stored. On success it stores version 1, computes the structure record, renders through the session's renderer with the session's faults applied in the rendering on the composing side, and perceives the render. The perceptual condition returns the evidence document, the structure record, and the input summary of the work as originally written. The control condition returns the structure record and the artifact as written, records `perception_skipped`, and returns no evidence.
-3. The model submits a decision with `sensoryne_submit_decision` in the platform decision shape: `{"faults": [{"description": "...", "where": "..."}], "revisions": [...], "complete": true or false, "assessment": "..."}`. The platform records the decision, applies revisions through the application's revision engine, records each applied and rejected operation with its error, stores the result as a new version with its structure record, re-renders, re-perceives, and returns new evidence, the new structure record, the applied and rejected lists, and the session so far. Revisions are applied before any termination is recorded, so an applied revision is always rendered.
-4. Termination labels are exact: `model_complete` only when the decision's complete flag is true, `model_no_revisions` only when the decision carries no revisions and is not complete, `iteration_limit` at the iteration limit, and `decision_unparseable` when no well-formed decision can be parsed. `sensoryne_finish_session` ends a session as `model_complete`.
-5. Revisions are addressed operations, never a free rewrite. Operation names and references are checked, numeric values are finite, ranges are enforced, the resulting artifact is validated as a whole, and a rejected operation leaves the current artifact unchanged. No-op and repeated revisions are detected by artifact hash and rejected. Versions are never overwritten, and each version carries its own copy of the source it was rendered from, checked against a hash of the rendered source. Versions are identified everywhere by the store's version identifier, `v1`, `v2`, and so on, including at both ends of a delta.
+1. The model opens a session for one application and states its objective.
+2. The model submits a work. The platform stores it as version 1, renders it, and perceives the render with the application's own instrument, built into Sensoryne.
+3. The evidence carries the comparison: Sensoryne's judgment of the render against the work as written and the objective, as named findings (a note not heard, a pitch off by so many cents, a line missing, a check failed, a section short of its written share). Measurements stand behind every finding.
+4. The model judges that evidence, submits a decision with addressed revision operations, and the platform applies them, stores the new version, renders, and perceives again. The evidence for a revised version carries the delta against the version before it.
+5. The model decides when the work is done. The platform assigns no score and never decides acceptance. Naming what is wrong is the judgment; what to do about it is the model's.
 
-Additional platform records, computed by the platform and stored with each version:
+The model connects as a client and calls six tools while it works: `sensoryne_open_session`, `sensoryne_submit_work`, `sensoryne_submit_decision`, `sensoryne_finish_session`, `sensoryne_probe` (perceive a hypothetical revision without committing it), and `sensoryne_recall` (the platform's episodic memory of completed sessions).
 
-- **Delta evidence.** After a revision, a perceptual version's evidence carries a `delta` key: `from_version` and `to_version` in the store's version identifiers, `changed_measurements` sorted by dotted path rooted at `measurements`, each entry holding `before`, `after`, and for numeric leaves `absolute_delta` and, when before is not zero, `relative_delta`, `added_measurements` and `removed_measurements` as sorted dotted paths rooted at `measurements`, `unchanged_keys` as sorted measurement paths rooted at `measurements`, and `structural_diff` with added, removed, and modified dotted paths only. A measurement that appears or disappears is listed under added or removed, never also under changed. Boolean values are leaves, never numbers. A first version has no delta. A control version carries no delta, because nothing was perceived. A rejected, no-op, or repeated revision produces no version and no delta.
-- **Invariant checks.** Each application declares invariants. Every evidence document carries an `invariants` block with `checked` entries holding `id`, `description`, `held`, `value`, and `violations` where applicable, plus a `summary` with total, held, and broken counts. Invariants are evaluated on every version.
-- **Reliability metadata.** Every evidence document carries a `reliability` block stating the instrument's name and its known limits as facts about the instrument.
-- **Objective coverage.** Every evidence document carries an `objective_coverage` list: each detectable part of the session's stated objective, in the objective's own terms, with `item` and `present`. Where an objective states nothing detectable, the list is empty.
-- **Robustness perception.** The music application declares variations, tempo scaled by 0.95 and by 1.05 and all velocities scaled by 0.9. The same score is rendered under each variation, perceived by the same hearing, and reported in a `robustness` block with per-variation headline pitch and loudness figures and per-part note counts, plus the spread of each across variations. Other applications declare no variations and produce no robustness block.
-
-Two further tools:
-
-- `sensoryne_probe` takes session_id and a decision. Only its revisions are used. The platform applies them to a throwaway copy of the current artifact, renders and perceives the result, and returns what a submission of that hypothetical artifact returns in the session's condition, with `probe: true` at the top level. In the perceptual condition that is the evidence document, carrying a delta against the current version whose hypothetical end is named as the next version identifier with a `-probe` suffix, such as `v2-probe`. In the control condition it is the control submission shape, with no evidence and no delta. A probe creates no version, changes no stored record, and cannot end a session. An invalid probe returns validation failures and changes nothing.
-- `sensoryne_recall` takes application and limit. The platform keeps, per application, the structure record and evidence summary of every session that ended `model_complete`, labeled with that termination and the session objective, in an on-disk episodic memory file. Recall returns those pairs most recent first, in both conditions.
+Recorded sessions replay in the viewer with no model and no API key: open the viewer over a sessions folder and every version, render, evidence document, and decision is there to inspect.
 
 ## Applications
 
-Sensoryne ships with eight applications on one interface. Each provides `NAME`, `validate`, `composition_prompt`, `composition_retry_prompt`, `control_prompt`, `perceptual_prompt`, `input_summary`, `structure_record`, `generate_ground_truth`, `plant_faults`, `perceive`, `apply_revision`, `apply_revisions`, and its instrument. Each has a renderer at the repository root on the composing side. Each runs the three-session pattern: control with faults, perceptual with the same faults, perceptual clean. Every renderer takes one file path as its output: it writes its primary output file exactly at that path, and derives any additional files from it, animation frames as `<stem>_frame_NNN<ext>`.
+Eight applications share one interface. Each declares its artifact shape, its validation, its renderer, its instrument, and its comparison: the findings its judgment can name.
 
-- **Music.** The hearing is built into the application in `stage2/apps/music/hearing/` with numpy and scipy only: a cochlea and analyzer taking audio in blocks, frame percepts with band energies, loudness, brightness, spectral flux, interpolated fundamental pitch, a 32-place tonotopic place vector, block energy, and spectral flatness; silent, tonal, and pitched classification and whole-reading aggregation; a plain language reading with note name and cents when pitched; a second reading of the place-by-time field rendered as an image and read back; a 78-mode Chladni plate model from a 55 Hz reference spanning 55 to 14,575 Hz; 24 by 32 trajectory matching by dynamic time warping with chi-square cost and a pitch-invariant variant; a gallery of named exemplars; episodic memory with salience and consolidation; a word lexicon with ranked cohorts; phonetics with manner fractions, formants F1 to F3, and voice onset time; utterance segmentation; a harmonic stack scoring MIDI 21 to 108 with an octave guard, harmonic pitch with confidence, and the top five polyphony candidates; an oscilloscope channel; a 20-segment token pack with Chladni and spectrogram images and a phonetics block; calibration from labeled takes; and deterministic synthetic tone, chord, sweep, noise, and click sounds. The hearing measures pitch against the note table and reports cents from exact, and flags harmonic pitch disagreement with the cochlea pitch without overwriting the main reading. It works on handed-in renders only. It does not judge, and it does not measure the model's intent.
-- **Music, vocal extension.** A vocal artifact holds `kind: vocal`, lyrics as a list of lines, each line a list of syllables or words in order, and a handed-in audio render. The performer is outside the platform. The hearing reports per lyric line: median pitch named against the note table with cents deviation, pitch range, vibrato rate and extent on sustained notes, formant figures, measured onset time, and syllable events detected against the stated count; phrase and breath boundaries from energy segmentation with gap durations. Vocal invariants check every lyric line detected as a phrase, syllable event count per line against the stated count, and pitch present in every line. Vocal revisions address the lyrics only: replace a line, add a line, remove a line. A revised vocal work is handed in again as a new render.
-- **Music, instrument table.** `stage2/apps/music/instruments.py` holds every instrument's keys and notes, researched from orchestration reference works and maker specifications. The note table covers every note named in any instrument range, B0 to C8, with exact pitch in Hz at A4 = 440 Hz. Entries store written and sounding ranges, practical and full tops where both are given, open strings, tunings, and named variants as variants. The music artifact names its instrument. Validation checks written notes against that instrument's written range. The structure record and evidence speak in that instrument's terms. A user names the instrument their piece was played on; the instrument itself stays outside the platform.
-- **Poetry.** Artifact `{"stanzas": [[line, ...], ...]}`. The instrument is a mechanical text analyzer over delivered text: per line word count, character count, and a syllable estimate by the stated rule, end word of every line, rhyme grouping by normalized ending, repeated words with counts and line numbers, and delivered counts per stanza and in total. Every syllable count is labeled an estimate. It does not judge meter, rhyme quality, or meaning.
-- **Story.** Artifact `{"sections": [{"title": "...", "text": "..."}]}`. The instrument is a text analyzer over delivered text: per section word count, sentence count, dialogue share, and share of the whole; delivered section count and order; and which promised event strings appear in the delivered text and which do not. It does not judge plot, pacing, or quality.
-- **Drawing.** Artifact `{"svg": "...", "elements": [...]}`. The instrument is a raster analyzer over the rendered PNG: dimensions, dominant colors and shares, ink coverage overall and per quadrant, and the bounding box of the non-background region. It does not say what the picture shows.
-- **Code.** Artifact `{"files": [{"name": "main.py", "text": "..."}], "purpose": "...", "tests": [{"name": "...", "input": "...", "expected": "..."}]}`. The instrument is execution: the delivered program runs in a temporary directory with reduced environment and disabled sockets, once per stated test, with a 10 second limit per test, input fed on standard input, recording exit status, standard output, standard error, run time, whether the limit was hit, and whether output matches expected exactly. The execution environment is not a security sandbox and is not for untrusted external use. It does not judge code quality beyond the stated tests.
-- **Typography.** Artifact: a page size and elements, each with id, kind (heading, body, caption, image block), text where it has text, font size, position and box, and alignment. The renderer draws the page to an image with Pillow. The instrument measures each element's realized box, margins against the page edges, alignment consistency as how many elements share each left edge, contrast of each text element against its background, the type hierarchy as heading, body, and caption size ratios, and whitespace share of the page. It does not judge layout quality.
-- **Animation.** Artifact: duration, frame rate, canvas size, and elements, each with an id and a keyframe track of time, position, size, opacity, and an easing per segment (linear, ease-in, ease-out, ease-in-out). The renderer produces frames as images. The instrument measures per-element realized positions at sampled times against the keyframes, frame-to-frame difference totals, whether the final frame matches the first for a work declared a loop, total duration, and the share of frames in which each element is visible. It does not judge motion quality.
-- **Sound design.** Artifact: a duration and a list of sound events, each with id, kind (noise burst, filtered noise, sine cluster, percussive hit, silence), start, duration, gain, and kind parameters filter cutoff and bandwidth. The renderer synthesizes the events to audio with numpy. The instrument measures with non-pitch analysis: per-event realized onset and duration, spectral centroid and bandwidth per event, the loudness contour of the whole, silence share, and event overlap. It does not judge sound quality.
+- **Music.** The hearing is built into the application (`stage2/apps/music/hearing/`), with numpy and scipy only: a cochlea and analyzer over handed-in audio, a 78-mode Chladni plate model, trajectory matching, a harmonic stack over MIDI 21 to 108, and a 20-segment token pack. It knows every instrument's keys and notes (`stage2/apps/music/instruments.py`, 18 instruments) with each note's exact pitch in Hz at A4 = 440 Hz, and names measured pitches against that table with deviation in cents. The comparison judges the render against the written score: a note not heard (naming the pitch heard in its place), a pitch off by cents, a part sounding at the wrong dynamic level, sound that was not written, a section silent. A vocal extension judges handed-in vocal renders line by line against the written lyrics.
+- **Poetry.** Artifact: stanzas of lines. The instrument is a mechanical text analyzer: word and character counts, a syllable estimate per line by a stated rule (always labeled an estimate), end words, rhyme grouping, repeated words. The comparison judges the delivered poem against the written one and the declared form: a line missing, duplicated, swapped, or differing; a stanza or line count off the declared form; syllable departures from a form the poem itself declares.
+- **Story.** Artifact: titled sections with promised events. The instrument measures per-section word and sentence counts, dialogue share, and share of the whole, and which promised event strings the delivered text contains. The comparison judges: a promised event not delivered, a section missing, a section's share of the whole off what was written, sections out of order.
+- **Drawing.** Artifact: declared shapes and an SVG. The instrument is a raster analyzer over the rendered image: dimensions, dominant colors, ink coverage, the bounding box of the drawn region. The comparison judges the delivered picture against the declared shapes: a shape missing, a shape present that was not declared, geometry off, color off.
+- **Code.** Artifact: program files with stated checks (input and expected output). The instrument is execution: each check runs in a temporary directory with a reduced environment and disabled sockets under a 10-second limit. The comparison judges the delivered program against its own stated checks: a check failed (expected against actual output, quoted), a check errored, a check timed out.
+- **Typography.** Artifact: a page of elements with declared boxes, sizes, and alignment. The renderer draws the page with Pillow. The instrument measures each element's realized box, margins, contrast, and the type hierarchy. The comparison judges: a block missing, a box displaced from where it was declared, text overflowing its box, text differing from what was written.
+- **Animation.** Artifact: elements with keyframe tracks over a stated duration and frame rate. The renderer produces frames as images. The instrument measures realized positions at sampled times, frame-to-frame differences, total duration, and per-element visibility. The comparison judges: a frame count off, a duration off, a keyframe not realized, an element present that was not written.
+- **Sound design.** Artifact: a list of sound events (noise bursts, filtered noise, sine clusters, percussive hits, silence) with declared onsets, durations, and gains. The renderer synthesizes the events with numpy. The instrument measures realized onsets and durations, spectral figures per event, the loudness contour, and silence share. The comparison judges: an event not realized, an onset displaced from where it was written, an onset present that was not written.
+
+Every application also runs control sessions (no perception, the model's own impression only) and planted-fault sessions, so the difference the perception makes is measured, not asserted.
 
 ## Viewer
 
-The replay viewer serves recorded sessions from all applications. It shows the sessions list, the iteration timeline, the render, the evidence summary, the measurement fields, the structure record, and the model's findings for the selected iteration, with planted ground truth behind its toggle. For any session with more than one version, the delta view shows, between consecutive versions, the changed measurements with before, after, and deltas, the added and removed paths, and the structural diff, read from the stored delta blocks. Application-specific extras are shown only when present in that session's evidence. The viewer judges nothing.
+The viewer replays recorded sessions from all applications. It shows the session explorer, the iteration timeline, the render, the evidence, the comparison findings, the model's decision, and, between versions, the delta. Each application has one drawn panel built from its own evidence: a time ruler for sound design, declared against realized boxes for typography, declared against delivered shapes for drawing, a frame strip for animation, a checks panel for code, a form grid for poetry, section bars with promised events for story. The page is fully self-contained and fetches nothing from the network.
+
+Sensoryne also ships as an installable desktop application (Windows, per-user install) that opens this viewer over the local session store.
+
+## Boundaries
+
+Sensoryne judges whether the delivered work matches the written work and the stated objective, and names every departure it finds. It does not judge aesthetic quality, meaning, or intent, and no finding claims otherwise. Each instrument's measurements have stated limits, recorded with the evidence itself as reliability metadata. The code application judges a program only against the checks its author stated; passing them is not a claim of general correctness or security.
+
+## Testing
+
+The suite covers the platform core, every application's comparison judgment with planted faults, the session store, the probe and recall tools, and the viewer page.
+
+```bash
+python -m unittest discover -s tests
+```
+
+Current state: 124 tests, with one recorded failure, `test_probe_clean_render_has_no_findings`. On one faithful two-part piano render, a single high note (G5) whose attack is masked by the lower part still sounding reads about 10.7 dB softer than written and draws one dynamics finding. Every planted loudness fault is caught and named correctly. The limit is recorded rather than tuned away, because fitting the threshold to that note would make the judgment less trustworthy everywhere else. Four piano-route tests and two session-record tests skip in a bare checkout: the piano renderer lives in the companion embers-piano project beside this one, and the session-record tests need a recorded sessions folder.
+
+## Security
+
+The code application executes submitted programs in a temporary directory with a reduced environment and disabled sockets, under a per-check time limit. **That is not a security sandbox.** Do not run Sensoryne's code application on untrusted work or expose it to untrusted users. Session records, renders, and evidence are written to the local sessions folder in plain files. The platform itself makes no network calls; the connected model reaches it locally.
 
 ## How Muse Ember was used
 
-Every part of this project was written by Muse Ember. In this submission, Muse Ember is the only model the project's AI functionality runs on; Sensoryne itself can be used with other models. At runtime Muse Ember is a client of the platform through the Meta Model API at `POST https://api.meta.ai/v1/responses` with the key read from `MODEL_API_KEY`. Its default reasoning mode is used and is never overridden or disabled. The Responses API carries a tools array in each request; the model answers with `function_call` items; the host executes the call and returns a `function_call_output` item under the same chain via `previous_response_id`; `tool_choice` is `auto`. The host `run_demo.py` sends one opening task per session and then executes tool calls only. It composes no evaluation prompts, assembles no session-so-far text of its own, and decides nothing.
+Every part of this project was written by Muse Ember, working through the Meta Model API under the direction of the project's owner. Ember composed the demonstration works in the recorded sessions as well, answering Sensoryne's judgments with revisions until she judged each work complete.
 
-## Setup Instructions
+In this submission, Muse Ember is the only model the project's AI functionality runs on; Sensoryne itself can be used with other models.
+
+Total Meta Model API spend for this project, November 23 to December 2, 2026: $6.27 across 1,903 calls, recorded in the project's per-run spend ledgers (the usage dashboard figure for the same window governs for the submission).
+
+## Setup
 
 Dependencies are this project's own only: Python 3.9 or later, numpy, scipy, Pillow, and cairosvg for the drawing application's renderer.
 
@@ -70,25 +83,10 @@ Dependencies are this project's own only: Python 3.9 or later, numpy, scipy, Pil
 pip install numpy scipy Pillow cairosvg
 ```
 
-For the demonstration host only: set MODEL_API_KEY in the environment.
+Run a session host with a model connected as an MCP client (`mcp_server.py`), or replay recorded sessions in the viewer:
 
 ```bash
-python3 run_demo.py --app music
-python3 run_demo.py --app poetry
-python3 run_demo.py --app story
-python3 run_demo.py --app drawing
-python3 run_demo.py --app code
-python3 run_demo.py --app typography
-python3 run_demo.py --app animation
-python3 run_demo.py --app sound_design
+python3 -m stage2.viewer --port 8931 --sessions-root sessions
 ```
 
-run_demo.py runs one application per run. Each run writes into sessions/<run_id>/, holding sessions/<app>-control-faulted, sessions/<app>-perceptual-faulted, and sessions/<app>-perceptual-clean, plus artifacts/ and spend.jsonl. Each session directory holds history.jsonl, renders, and report.html.
-
-Replay recorded sessions with the viewer; no API key is needed.
-
-```bash
-python3 -m stage2.viewer
-```
-
-Then open http://127.0.0.1:8000/.
+The demonstration host (`bridge.py`, with `run_demo.py`) connects Muse Ember through the Meta Model API; set `MODEL_API_KEY` in the environment for that route.
