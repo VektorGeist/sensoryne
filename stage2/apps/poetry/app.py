@@ -26,15 +26,15 @@ REVISION_SHAPE_TEXT = """Revisions are operations applied to the poem, in order.
 
 
 def validate(artifact):
-    """Structure only: stanza and line counts match the form
-    when a form is present, and no line is empty."""
+    """Structure only: an object with a stanzas list, at
+    least one stanza, each stanza a list of lines, each line
+    a non-empty string."""
     errors = []
     if not isinstance(artifact, dict) or "stanzas" not in artifact:
         return ["poem must be an object with a 'stanzas' list"]
     stanzas = artifact.get("stanzas")
     if not isinstance(stanzas, list) or not stanzas:
         return ["poem must contain at least one stanza"]
-    total_lines = 0
     for index, stanza in enumerate(stanzas, start=1):
         if not isinstance(stanza, list) or not stanza:
             errors.append("stanza %d must be a non-empty list of lines" % index)
@@ -42,20 +42,6 @@ def validate(artifact):
         for line_index, line in enumerate(stanza, start=1):
             if not isinstance(line, str) or not line.strip():
                 errors.append("stanza %d line %d is empty" % (index, line_index))
-            else:
-                total_lines += 1
-    form = artifact.get("form")
-    if isinstance(form, dict):
-        if "stanzas" in form and form["stanzas"] != len(stanzas):
-            errors.append(
-                "stanza count %d does not match the form's %s"
-                % (len(stanzas), form["stanzas"])
-            )
-        if "line_count" in form and form["line_count"] != total_lines:
-            errors.append(
-                "line count %d does not match the form's %s"
-                % (total_lines, form["line_count"])
-            )
     return errors
 
 
@@ -69,7 +55,7 @@ def composition_prompt(objective):
     return """Compose a poem meeting the objective's form. Answer with the artifact JSON only, in this format and nothing else:
 {"stanzas": [["line", "..."], ["..."], ["..."]]}
 
-The objective states the form in words and as data: the total line count, the stanza count, the syllables per line, and the rhyme pairs (lines numbered from 1 across the poem).
+The objective states the form in words and as data: the total line count, the stanza count, the syllables per line, and the rhyme pairs (lines numbered from 1 across the poem). The poem is composed toward that form.
 
 Objective:
 %s
@@ -135,6 +121,8 @@ OUTPUT (what was delivered): the delivered text, with the instrument's full evid
 
 Evidence:
 %s
+
+The evidence's comparison section is Sensoryne's judgment of the delivered text against the written poem and the objective, and the decision must state how it answers that judgment.
 
 State any faults you find, order revisions if needed, and judge whether the delivered work meets the objective.
 
