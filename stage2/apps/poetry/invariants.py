@@ -1,5 +1,4 @@
 """stage2/apps/poetry/invariants.py - declared invariants, reliability, coverage."""
-import copy
 from .instrument import syllable_estimate
 def _c(i,d,held,val,viol=None): return {"id":i,"description":d,"held":bool(held),"value":val,"violations":list(viol or [])}
 def _lines(art):

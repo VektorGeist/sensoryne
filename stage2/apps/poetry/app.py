@@ -117,7 +117,7 @@ Input summary:
 Structure record (the poem's lines numbered across the whole poem, grouped by stanza, with the form restated):
 %s
 
-OUTPUT (what was delivered): the delivered text, with the instrument's full evidence about it below. The instrument measures and reports; it does not judge. Judge the delivered poem against what was written and the objective.
+OUTPUT (what was delivered): the delivered text, with the instrument's full evidence about it below. Judge the delivered poem against what was written and the objective.
 
 Evidence:
 %s
