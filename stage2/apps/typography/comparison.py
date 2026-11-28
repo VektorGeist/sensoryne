@@ -37,7 +37,6 @@ every displaced or overflow finding carries both the
 written and the delivered values it was judged on.
 """
 
-import copy
 
 __all__ = [
     "BOX_TOLERANCE",

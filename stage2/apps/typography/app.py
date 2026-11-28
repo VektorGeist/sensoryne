@@ -1,10 +1,13 @@
-"""stage2/apps/typography/app.py - typography and layout application.
+"""stage2/apps/typography/app.py - the typography application.
 
-The margin fault is a placement fault: the element is moved
-off the shared alignment edge into the page margin band, where
-the margin measurements and the alignment consistency reading
-show it. It stays inside the page bounds, so the inside-page
-invariant is not the measure that detects it.
+Sensoryne receives the delivered page produced on the composing
+side.  Inside Sensoryne this application keeps the artifact
+format and validation, revisions, the raster analyzer adapter,
+the input summary and structure record, delivery-fault
+definitions and ground-truth text, and the prompts.  Delivery
+faults are definitions recorded here and applied by the
+composing side; the delivered page Sensoryne receives already
+carries them.
 """
 import copy, json, math
 from ...decision import DECISION_SHAPE_TEXT
