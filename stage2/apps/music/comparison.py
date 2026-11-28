@@ -32,7 +32,6 @@ __all__ = [
     "NOTE_HEARD_FUNDAMENTAL_BACKGROUND_RATIO",
     "SILENCE_LOUDNESS_DB",
     "DYNAMICS_THRESHOLD_DB",
-    "DYNAMICS_CLEAN_SPREAD_DB",
     "DYNAMICS_OFFSET_DB",
     "DYNAMICS_MAPPING",
     "compute_comparison",
@@ -59,7 +58,6 @@ NOTE_HEARD_FUNDAMENTAL_PEAK_RATIO = 2.0
 NOTE_HEARD_FUNDAMENTAL_BACKGROUND_RATIO = 3.0
 SILENCE_LOUDNESS_DB = -70.0
 DYNAMICS_THRESHOLD_DB = 4.0
-DYNAMICS_CLEAN_SPREAD_DB = 0.0
 DYNAMICS_ATTACK_WINDOW_SECONDS = 0.25
 # Retained for compatibility; the note-anchored dynamics no
 # longer uses a fixed offset (see DYNAMICS_MAPPING): the
@@ -67,13 +65,11 @@ DYNAMICS_ATTACK_WINDOW_SECONDS = 0.25
 DYNAMICS_OFFSET_DB = -10.0
 DYNAMICS_MAPPING = {
     "formula": "adjusted_db = attack_loudness_db - 20*log10(effective_velocity); expected_db = median adjusted_db over all notes; attack_loudness_db = RMS loudness in dB over min(0.25, note duration) seconds from note onset",
-    "offset_db": DYNAMICS_OFFSET_DB,
     "effective_velocity": "velocity * part gain",
     "threshold_db": DYNAMICS_THRESHOLD_DB,
-    "clean_spread_db": DYNAMICS_CLEAN_SPREAD_DB,
     "attack_window_seconds": DYNAMICS_ATTACK_WINDOW_SECONDS,
     "notes": "every written note in every part; attack loudness from the hearing's loudness machinery per note over the window starting at the note onset",
-    "calibration": "median normalization: on a faithful render the adjusted level clusters tightly because every note is measured at the same phase of its envelope; clean spread measured on faithful renders of the suite's clean cases",
+    "calibration": "median normalization: on a faithful render the adjusted level clusters tightly because every note is measured at the same phase of its envelope; observed spread reported per render",
 }
 
 _EPS = 1e-12
@@ -209,7 +205,6 @@ def _vocal_comparison(artifact, render_record, evidence):
             "note_heard_fundamental_background_ratio": NOTE_HEARD_FUNDAMENTAL_BACKGROUND_RATIO,
             "silence_loudness_db": SILENCE_LOUDNESS_DB,
             "dynamics_threshold_db": DYNAMICS_THRESHOLD_DB,
-            "dynamics_clean_spread_db": DYNAMICS_CLEAN_SPREAD_DB,
             "dynamics_mapping": copy.deepcopy(DYNAMICS_MAPPING),
         },
     }
@@ -1265,7 +1260,6 @@ def compute_comparison(artifact, render_record, evidence=None):
             "note_heard_fundamental_background_ratio": NOTE_HEARD_FUNDAMENTAL_BACKGROUND_RATIO,
             "silence_loudness_db": SILENCE_LOUDNESS_DB,
             "dynamics_threshold_db": DYNAMICS_THRESHOLD_DB,
-            "dynamics_clean_spread_db": DYNAMICS_CLEAN_SPREAD_DB,
             "dynamics_observed_spread_db": dynamics_observed_spread,
             "dynamics_median_adjusted_level_db": dynamics_median,
             "dynamics_main_pool_median_adjusted_level_db": dynamics_main_median,
@@ -1278,3 +1272,192 @@ def compute_comparison(artifact, render_record, evidence=None):
 
 
 build_comparison = compute_comparison
+
+# ---- merged Music & Sound: written events comparison (folded) ----
+_score_compute_comparison = compute_comparison
+ONSET_TOLERANCE_SECONDS = 0.1
+FINDING_KINDS = ("event_not_realized", "onset_displaced", "onset_not_written")
+_EV_EPS = 1e-9
+
+def _ev_finding(kind, where, written, delivered, statement):
+    return {"kind": kind, "where": where, "written": _j(written), "delivered": _j(delivered), "statement": statement}
+
+def _ev_summary(findings):
+    counts = {}
+    for finding in findings:
+        counts[finding["kind"]] = counts.get(finding["kind"], 0) + 1
+    total = len(findings)
+    if total == 0:
+        line = "No findings: the delivered audio matches the written events within the stated tolerances."
+    else:
+        line = "%d finding(s): %s." % (total, ", ".join("%s=%d" % (kind, counts[kind]) for kind in sorted(counts)))
+    return {"counts": counts, "total": total, "line": line}
+
+def _written_events(artifact):
+    entries = []
+    raw = artifact.get("events", []) if isinstance(artifact, dict) else []
+    for event in raw or []:
+        if not isinstance(event, dict):
+            continue
+        if event.get("kind") == "silence":
+            continue
+        try:
+            start = float(event.get("start", 0.0))
+        except Exception:
+            continue
+        try:
+            duration = float(event.get("duration", 0.0))
+        except Exception:
+            duration = 0.0
+        eid = event.get("id")
+        entries.append({"id": eid, "event": eid, "name": eid, "kind": event.get("kind"), "start": start, "written_onset": start, "written_start": start, "onset": start, "duration": duration, "end": start + duration, "gain": event.get("gain")})
+    return entries
+
+def _measured_events(render_record, evidence):
+    for source in (evidence, render_record):
+        if not isinstance(source, dict):
+            continue
+        measurements = source.get("measurements")
+        if isinstance(measurements, dict) and isinstance(measurements.get("events"), list):
+            return list(measurements["events"])
+        full = source.get("full")
+        if isinstance(full, dict):
+            full_measurements = full.get("measurements")
+            if isinstance(full_measurements, dict) and isinstance(full_measurements.get("events"), list):
+                return list(full_measurements["events"])
+    if isinstance(render_record, dict):
+        path = render_record.get("path")
+        delivered = render_record.get("delivered_events")
+        if delivered is None:
+            delivered = render_record.get("events")
+        if isinstance(path, str) and os.path.isfile(path) and isinstance(delivered, list) and delivered:
+            try:
+                from .instrument import perceive_audio
+                result = perceive_audio(path, delivered, render_record.get("duration"))
+                measurements = result.get("measurements") if isinstance(result, dict) else None
+                if isinstance(measurements, dict) and isinstance(measurements.get("events"), list):
+                    return list(measurements["events"])
+            except Exception:
+                pass
+    return []
+
+def _realized_onsets(render_record, evidence):
+    realized = []
+    for entry in _measured_events(render_record, evidence):
+        if not isinstance(entry, dict):
+            continue
+        if entry.get("kind") == "silence":
+            continue
+        onset = entry.get("onset_time")
+        if onset is None:
+            onset = entry.get("realized_onset")
+        if onset is None:
+            onset = entry.get("onset")
+        if onset is None:
+            continue
+        try:
+            onset_f = float(onset)
+        except Exception:
+            continue
+        eid = entry.get("id")
+        realized.append({"id": eid, "event": eid, "name": eid, "kind": entry.get("kind"), "onset_time": onset_f, "realized_onset": onset_f, "onset": onset_f, "time": onset_f})
+    realized.sort(key=lambda item: item["onset_time"])
+    return realized
+
+def _event_compute_comparison(artifact, render_record=None, evidence=None):
+    if evidence is None and isinstance(render_record, dict) and "measurements" in render_record:
+        evidence = render_record
+    written = _written_events(artifact)
+    realized = _realized_onsets(render_record, evidence)
+    tolerance = ONSET_TOLERANCE_SECONDS
+    candidates = []
+    for wi, w in enumerate(written):
+        for ri, r in enumerate(realized):
+            distance = abs(r["onset_time"] - w["start"])
+            if distance <= tolerance + _EV_EPS:
+                candidates.append((distance, wi, ri))
+    candidates.sort(key=lambda item: (item[0], item[1], item[2]))
+    matched_written = {}
+    matched_realized = {}
+    for _distance, wi, ri in candidates:
+        if wi in matched_written or ri in matched_realized:
+            continue
+        matched_written[wi] = ri
+        matched_realized[ri] = wi
+    events_realized_at_written = len(matched_written)
+    remaining_written = [wi for wi in range(len(written)) if wi not in matched_written]
+    remaining_realized = {ri for ri in range(len(realized)) if ri not in matched_realized}
+    displaced = {}
+    for wi in list(remaining_written):
+        w = written[wi]
+        found = None
+        for ri in sorted(remaining_realized):
+            r = realized[ri]
+            if r.get("id") is not None and r.get("id") == w.get("id"):
+                found = ri
+                break
+        if found is None:
+            idless = [ri for ri in remaining_realized if realized[ri].get("id") is None]
+            if idless and remaining_written:
+                nearest_ri = min(idless, key=lambda ri: abs(realized[ri]["onset_time"] - w["start"]))
+                nearest_wi = min(remaining_written, key=lambda idx: abs(realized[nearest_ri]["onset_time"] - written[idx]["start"]))
+                if nearest_wi == wi:
+                    found = nearest_ri
+        if found is not None:
+            displaced[wi] = found
+            remaining_realized.discard(found)
+    findings = []
+    for wi, w in enumerate(written):
+        if wi in matched_written:
+            continue
+        if wi in displaced:
+            r = realized[displaced[wi]]
+            realized_onset = r["onset_time"]
+            displacement = float(realized_onset - w["start"])
+            where = "event %s at %s seconds" % (w.get("id"), w["start"])
+            findings.append(_ev_finding("onset_displaced", where, {"id": w.get("id"), "event": w.get("id"), "name": w.get("id"), "kind": w.get("kind"), "start": w["start"], "written_onset": w["start"], "written_start": w["start"], "onset": w["start"], "duration": w.get("duration")}, {"id": r.get("id"), "event": r.get("id"), "name": r.get("id"), "kind": r.get("kind"), "realized_onset": realized_onset, "onset_time": realized_onset, "onset": realized_onset, "time": realized_onset, "displacement_seconds": displacement, "displacement": float(abs(displacement)), "absolute_displacement_seconds": float(abs(displacement)), "difference_seconds": displacement, "written_onset": w["start"], "onset_tolerance_seconds": tolerance}, "Written event %r at %s seconds was realized at %s seconds, displaced by %s seconds: the nearest realized onset is %s seconds, %s seconds from its written onset %s seconds." % (w.get("id"), w["start"], realized_onset, displacement, realized_onset, displacement, w["start"])))
+            continue
+        where = "event %s at %s seconds" % (w.get("id"), w["start"])
+        findings.append(_ev_finding("event_not_realized", where, {"id": w.get("id"), "event": w.get("id"), "name": w.get("id"), "kind": w.get("kind"), "start": w["start"], "written_onset": w["start"], "written_start": w["start"], "onset": w["start"], "duration": w.get("duration")}, {"id": w.get("id"), "event": w.get("id"), "name": w.get("id"), "realized_onset": None, "onset_time": None, "onset": None, "present": False, "realized": False, "written_onset": w["start"], "onset_tolerance_seconds": tolerance}, "Written event %r at %s seconds was not realized in the delivered audio: no realized onset was heard at its written onset %s seconds." % (w.get("id"), w["start"], w["start"])))
+    for ri in sorted(remaining_realized, key=lambda i: realized[i]["onset_time"]):
+        r = realized[ri]
+        onset_time = r["onset_time"]
+        if any(abs(onset_time - w["start"]) <= tolerance + _EV_EPS for w in written):
+            continue
+        findings.append(_ev_finding("onset_not_written", "realized onset at %s seconds" % (onset_time,), {"id": None, "event": None, "name": None, "matching_written_event": None, "written_onset": None, "matching_written_onset": None, "onset_tolerance_seconds": tolerance}, {"id": r.get("id"), "event": r.get("id"), "name": r.get("id"), "kind": r.get("kind"), "realized_onset": onset_time, "onset_time": onset_time, "onset": onset_time, "time": onset_time, "onset_tolerance_seconds": tolerance}, "Realized onset at %s seconds matches no written event within %s seconds: no written event has an onset within tolerance of %s seconds." % (onset_time, tolerance, onset_time)))
+    return {"findings": findings, "summary": _ev_summary(findings), "events_written": len(written), "events_realized": events_realized_at_written, "events_realized_at_written_onsets": events_realized_at_written, "events_realized_at_written": events_realized_at_written, "events_not_realized": sum(1 for f in findings if f["kind"] == "event_not_realized"), "onsets_realized": len(realized), "tolerances": {"onset_tolerance_seconds": tolerance, "onset_tolerance": tolerance, "tolerance_seconds": tolerance}}
+
+def compute_comparison(artifact, render_record=None, evidence=None):
+    if evidence is None and isinstance(render_record, dict) and "measurements" in render_record:
+        evidence = render_record
+    if _is_vocal(artifact):
+        return _score_compute_comparison(artifact, render_record, evidence)
+    has_parts = isinstance(artifact, dict) and isinstance(artifact.get("parts"), list)
+    has_events = isinstance(artifact, dict) and isinstance(artifact.get("events"), list)
+    if has_parts and has_events:
+        score_comp = _score_compute_comparison(artifact, render_record, evidence)
+        event_comp = _event_compute_comparison(artifact, render_record, evidence)
+        findings = list(score_comp.get("findings", [])) + list(event_comp.get("findings", []))
+        counts = {}
+        for f in findings:
+            counts[f["kind"]] = counts.get(f["kind"], 0) + 1
+        total = len(findings)
+        if total == 0:
+            line = "No findings: the render matches the written work within the stated tolerances."
+        else:
+            line = "%d finding(s): %s." % (total, ", ".join("%s=%d" % (k, counts[k]) for k in sorted(counts)))
+        tolerances = dict(score_comp.get("tolerances", {}) or {})
+        tolerances.update(event_comp.get("tolerances", {}) or {})
+        combined = dict(score_comp)
+        combined.update(event_comp)
+        combined["findings"] = findings
+        combined["summary"] = {"counts": counts, "total": total, "line": line}
+        combined["tolerances"] = tolerances
+        combined["per_part"] = score_comp.get("per_part", [])
+        return combined
+    if has_events and not has_parts:
+        return _event_compute_comparison(artifact, render_record, evidence)
+    return _score_compute_comparison(artifact, render_record, evidence)
+
+build_comparison = compute_comparison
+
