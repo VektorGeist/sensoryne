@@ -122,7 +122,7 @@ class JudgeTests(unittest.TestCase):
                 judge.open_judgment(registry, "no-such-session")
 
     def test_every_application_module_exposes_a_facts_grounded_brief(self):
-        for name in ("music", "poetry", "story", "drawing", "code", "typography", "animation", "sound_design"):
+        for name in ("music", "poetry", "story", "drawing", "code", "typography", "animation", "argument"):
             module = __import__("stage2.apps.%s.app" % name, fromlist=["judge_brief"])
             brief = module.judge_brief()
             self.assertTrue(brief, "empty brief for %s" % name)

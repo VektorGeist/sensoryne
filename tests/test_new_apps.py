@@ -1,6 +1,6 @@
 """tests/test_new_apps.py - new application tests.
 
-For typography, animation, and sound design: validation, a
+For typography, animation, and sound events: validation, a
 rendered and perceived clean artifact, each planted fault
 detected in measurements or invariants, and one addressed
 revision applied. No model calls are made.
@@ -44,17 +44,17 @@ from stage2.apps.animation.app import (
     structure_record as animation_structure,
     validate as animation_validate,
 )
-from stage2.apps.sound_design import invariants as sound_invariants
-from stage2.apps.sound_design.app import (
-    apply_revision as sound_revision,
-    plant_faults as sound_faults,
-    perceive as sound_perceive,
-    structure_record as sound_structure,
-    validate as sound_validate,
+from stage2.apps.music import invariants as event_invariants
+from stage2.apps.music.app import (
+    apply_revision as event_revision,
+    plant_faults as event_faults,
+    perceive as event_perceive,
+    structure_record as event_structure,
+    validate as event_validate,
 )
 from typography_renderer import renderer as typography_renderer
 from animation_renderer import renderer as animation_renderer
-from sound_design_renderer import renderer as sound_renderer
+from music_renderer import renderer as event_renderer
 
 
 def _check(block, invariant_id):
@@ -347,7 +347,7 @@ class AnimationTests(unittest.TestCase):
             self.assertEqual(evidence["measurements"]["frame_count"], 20)
 
 
-class SoundDesignTests(unittest.TestCase):
+class EventTests(unittest.TestCase):
     def _artifact(self):
         return {
             "duration": 5.0,
@@ -360,13 +360,13 @@ class SoundDesignTests(unittest.TestCase):
 
     def test_clean_render_and_perceive(self):
         artifact = self._artifact()
-        self.assertEqual(sound_validate(artifact), [])
+        self.assertEqual(event_validate(artifact), [])
         with tempfile.TemporaryDirectory() as tmpdir:
             out = os.path.join(tmpdir, "work.wav")
-            record = sound_renderer(artifact, out, [])
+            record = event_renderer(artifact, out, [])
             self.assertTrue(os.path.exists(out))
             self.assertEqual(record["event_count"], 3)
-            evidence = sound_perceive(record)
+            evidence = event_perceive(record)
             self.assertIsNone(evidence["interpretation"])
             measurements = evidence["measurements"]
             self.assertEqual(measurements["sample_rate"], 44100)
@@ -381,7 +381,7 @@ class SoundDesignTests(unittest.TestCase):
             self.assertGreater(hit["realized_duration"], 0.0)
             self.assertGreaterEqual(hit["spectral_centroid_hz"], 0.0)
             self.assertGreaterEqual(hit["spectral_bandwidth_hz"], 0.0)
-            block = sound_invariants.evaluate_invariants(
+            block = event_invariants.evaluate_invariants(
                 artifact, record, evidence
             )
             self.assertTrue(_check(block, "delivered_event_count_matches")["held"])
@@ -392,8 +392,8 @@ class SoundDesignTests(unittest.TestCase):
         artifact = self._artifact()
         artifact["events"][1]["start"] = 4.5
         artifact["events"][1]["duration"] = 1.0
-        self.assertEqual(sound_validate(artifact), [])
-        block = sound_invariants.evaluate_invariants(
+        self.assertEqual(event_validate(artifact), [])
+        block = event_invariants.evaluate_invariants(
             artifact,
             {"delivered_events": copy.deepcopy(artifact["events"])},
         )
@@ -403,19 +403,19 @@ class SoundDesignTests(unittest.TestCase):
 
     def test_each_planted_fault_is_detected(self):
         artifact = self._artifact()
-        faults = sound_faults(artifact)
+        faults = event_faults(artifact)
         self.assertEqual(
             [fault["kind"] for fault in faults],
             ["drop_event", "shift_event_start", "raise_event_gain"],
         )
         with tempfile.TemporaryDirectory() as tmpdir:
             clean_out = os.path.join(tmpdir, "clean.wav")
-            clean_record = sound_renderer(artifact, clean_out, [])
-            clean = sound_perceive(clean_record)
+            clean_record = event_renderer(artifact, clean_out, [])
+            clean = event_perceive(clean_record)
             faulted_out = os.path.join(tmpdir, "faulted.wav")
-            faulted_record = sound_renderer(artifact, faulted_out, faults)
+            faulted_record = event_renderer(artifact, faulted_out, faults)
             self.assertEqual(faulted_record["faults_applied"], faults)
-            faulted = sound_perceive(faulted_record)
+            faulted = event_perceive(faulted_record)
 
             self.assertEqual(faulted["measurements"]["event_count"], 2)
             faulted_ids = [
@@ -439,7 +439,7 @@ class SoundDesignTests(unittest.TestCase):
                 clean_by_id["wash"]["peak_amplitude"],
             )
 
-            block = sound_invariants.evaluate_invariants(
+            block = event_invariants.evaluate_invariants(
                 artifact, faulted_record, faulted
             )
             self.assertFalse(
@@ -449,11 +449,11 @@ class SoundDesignTests(unittest.TestCase):
 
     def test_one_addressed_revision_applied(self):
         artifact = self._artifact()
-        revised = sound_revision(
+        revised = event_revision(
             artifact,
             {"op": "set_gain", "id": "wash", "gain": 0.9},
         )
-        self.assertEqual(sound_validate(revised), [])
+        self.assertEqual(event_validate(revised), [])
         wash = [
             event for event in revised["events"] if event["id"] == "wash"
         ][0]
@@ -461,8 +461,8 @@ class SoundDesignTests(unittest.TestCase):
         self.assertEqual(artifact["events"][1]["gain"], 0.4)
         with tempfile.TemporaryDirectory() as tmpdir:
             out = os.path.join(tmpdir, "revised.wav")
-            record = sound_renderer(revised, out, [])
-            evidence = sound_perceive(record)
+            record = event_renderer(revised, out, [])
+            evidence = event_perceive(record)
             self.assertEqual(evidence["measurements"]["event_count"], 3)
             by_id = {
                 event["id"]: event

@@ -18,7 +18,8 @@ from stage2.apps.story import app as story_app
 from stage2.apps.drawing import app as drawing_app
 from stage2.apps.code import app as code_app
 from stage2.apps.animation import app as animation_app
-from stage2.apps.sound_design import app as sound_app
+from stage2.apps.typography import app as typography_app
+from stage2.apps.typography import invariants as typography_invariants
 
 
 def _check(block, invariant_id):
@@ -47,11 +48,13 @@ class MusicJudgmentTests(unittest.TestCase):
         # notes heard of written per part, and note counts.
         self.assertEqual(_check(block, "note_count_per_part")["value"], {"solo": 1, "extra": 1})
         heard = _check(block, "notes_heard_of_written")
+        # No comparison in this pack: heard is unmeasured,
+        # stated as None, not as a measured zero.
         self.assertEqual(
             heard["value"],
             [
-                {"part": "solo", "notes_written": 1, "notes_heard": 0},
-                {"part": "extra", "notes_written": 1, "notes_heard": 0},
+                {"part": "solo", "notes_written": 1, "notes_heard": None},
+                {"part": "extra", "notes_written": 1, "notes_heard": None},
             ],
         )
 
@@ -141,10 +144,9 @@ class StoryJudgmentTests(unittest.TestCase):
         self.assertEqual(story_app.validate(artifact), [])
         from stage2.apps.story import invariants as story_invariants
         block = story_invariants.evaluate_invariants(artifact, {})
-        declared = _check(block, "declared_section_count_match")
+        declared = _check(block, "section_count")
         self.assertFalse(declared["held"])
-        self.assertEqual(declared["value"]["section_count"], 1)
-        self.assertEqual(declared["value"]["declared_section_count"], 3)
+        self.assertEqual(declared["value"], 1)
 
 
 class DrawingJudgmentTests(unittest.TestCase):
@@ -157,9 +159,9 @@ class DrawingJudgmentTests(unittest.TestCase):
         from stage2.apps.drawing import invariants as drawing_invariants
         block = drawing_invariants.evaluate_invariants(artifact, {})
         self.assertFalse(_check(block, "viewbox_present")["held"])
-        declared = _check(block, "declared_element_ids_presence")
+        declared = _check(block, "required_elements_present")
         self.assertFalse(declared["held"])
-        self.assertEqual(declared["value"], {"a": True, "gone": False})
+        self.assertEqual(declared["violations"], ["gone"])
 
 
 class CodeJudgmentTests(unittest.TestCase):
@@ -201,7 +203,20 @@ class AnimationJudgmentTests(unittest.TestCase):
         self.assertFalse(_check(block, "keyframe_time_order")["held"])
 
 
-class SoundDesignJudgmentTests(unittest.TestCase):
+class TypographyJudgmentTests(unittest.TestCase):
+    def test_unconventional_layout_is_accepted_and_reported(self):
+        artifact = {
+            "page": {"width": 800, "height": 1000},
+            "elements": [
+                {"id": "title", "kind": "heading", "text": "A title", "font_size": 32, "x": 50, "y": 40, "width": 700, "height": 50, "alignment": "left"},
+                {"id": "body", "kind": "body", "text": "Some body text.", "font_size": 14, "x": 50, "y": 120, "width": 700, "height": 200, "alignment": "left"},
+            ],
+        }
+        self.assertEqual(typography_app.validate(artifact), [])
+        block = typography_invariants.evaluate_invariants(artifact, {})
+        self.assertGreaterEqual(len(block["checked"]), 1)
+
+class SoundEventJudgmentTests(unittest.TestCase):
     def test_event_past_duration_is_accepted_and_reported(self):
         artifact = {
             "duration": 2.0,
@@ -209,8 +224,8 @@ class SoundDesignJudgmentTests(unittest.TestCase):
                 {"id": "hit", "kind": "percussive hit", "start": 1.5, "duration": 1.0, "gain": 0.8, "filter_cutoff": 180, "bandwidth": 0},
             ],
         }
-        self.assertEqual(sound_app.validate(artifact), [])
-        from stage2.apps.sound_design import invariants as sound_invariants
+        self.assertEqual(music_app.validate(artifact), [])
+        from stage2.apps.music import invariants as sound_invariants
         block = sound_invariants.evaluate_invariants(
             artifact, {"delivered_events": copy.deepcopy(artifact["events"])},
         )

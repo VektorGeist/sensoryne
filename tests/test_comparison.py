@@ -62,9 +62,10 @@ REMOVED_IDS = (
 )
 FINDING_KEYS = ("kind", "where", "written", "heard", "statement")
 
-# The probe score: the symphony artifact (sessions/
-# music-perceptual-1, first render) rendered through the
-# piano route.
+# The probe score: a two-part score for the piano route -
+# a lead part carrying eight long notes (each 3.0 seconds,
+# spaced 3.5 seconds apart) over a pad part carrying two
+# long notes - rendered through the piano route.
 PROBE_SCORE = {
     "instrument": "violin",
     "parts": [

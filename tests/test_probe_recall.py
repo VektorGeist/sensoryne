@@ -12,6 +12,7 @@ v2-probe.
 """
 
 import copy
+import json
 import os
 import sys
 import tempfile
@@ -292,6 +293,63 @@ class ProbeTests(unittest.TestCase):
             self.assertEqual(result["artifact"]["value"], 4)
             self.assertEqual(result["structure_record"]["value"], 4)
             self.assertEqual(context["current_source"]["value"], 1)
+
+
+class DecisionStringFormTests(unittest.TestCase):
+    def test_submit_decision_as_json_string_applies_revision_and_continues(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            _registry, context = _open_session(tmpdir)
+            controller.submit_work(context, {"value": 1})
+            decision = {
+                "faults": [],
+                "revisions": [{"op": "set_value", "value": 5}],
+                "complete": False,
+                "assessment": "raise the value",
+            }
+            result = controller.submit_decision(context, json.dumps(decision))
+
+            self.assertNotEqual(result.get("ended_by"), "decision_unparseable")
+            self.assertEqual(result["applied"], [{"op": "set_value", "value": 5}])
+            self.assertEqual(result["rejected"], [])
+            # The session continues: the revision produced a new
+            # version and did not end the session.
+            self.assertIsNone(context["ended_by"])
+            self.assertEqual(context["current_source"]["value"], 5)
+            record = context["store"].load("stub-artifact")
+            self.assertEqual(len(record["versions"]), 2)
+            self.assertEqual(record["versions"][-1]["version_id"], "v2")
+            self.assertEqual(_history_events(context, "decision_unparseable"), [])
+            decisions = _history_events(context, "decision")
+            self.assertEqual(len(decisions), 1)
+            self.assertEqual(decisions[0]["decision"], decision)
+
+    def test_probe_as_json_string_returns_probe_result_not_revisions_error(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            _registry, context = _open_session(tmpdir)
+            controller.submit_work(context, {"value": 1})
+            decision = {
+                "faults": [],
+                "revisions": [{"op": "set_value", "value": 5}],
+                "complete": False,
+                "assessment": "hypothetical",
+            }
+            result = controller.probe(context, json.dumps(decision))
+
+            self.assertTrue(result["probe"])
+            self.assertNotIn("errors", result)
+            self.assertNotEqual(
+                result.get("errors"),
+                ["probe decision must carry a revisions list"],
+            )
+            self.assertEqual(result["measurements"]["value"], 5)
+            self.assertEqual(result["delta"]["from_version"], "v1")
+            self.assertEqual(result["delta"]["to_version"], "v2-probe")
+            self.assertEqual(result["hypothetical_artifact"]["value"], 5)
+            # A probe creates no version and cannot end a session.
+            record = context["store"].load("stub-artifact")
+            self.assertEqual(len(record["versions"]), 1)
+            self.assertEqual(context["current_source"]["value"], 1)
+            self.assertIsNone(context["ended_by"])
 
 
 class RecallTests(unittest.TestCase):

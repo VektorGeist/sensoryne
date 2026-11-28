@@ -19,7 +19,6 @@ from stage2.apps.drawing import invariants as drawing_invariants
 from stage2.apps.code import invariants as code_invariants
 from stage2.apps.typography import invariants as typography_invariants
 from stage2.apps.animation import invariants as animation_invariants
-from stage2.apps.sound_design import invariants as sound_design_invariants
 
 
 def _check(block, invariant_id):
@@ -99,11 +98,12 @@ class MusicInvariantTests(unittest.TestCase):
         self.assertEqual(
             heard["value"],
             [
-                {"part": "melody", "notes_written": 2, "notes_heard": 0},
-                {"part": "harmony", "notes_written": 2, "notes_heard": 0},
-                {"part": "bass", "notes_written": 1, "notes_heard": 0},
+                {"part": "melody", "notes_written": 2, "notes_heard": None},
+                {"part": "harmony", "notes_written": 2, "notes_heard": None},
+                {"part": "bass", "notes_written": 1, "notes_heard": None},
             ],
         )
+        self.assertEqual(heard["violations"], [])
 
     def test_faulted_score_breaks_caps_and_duration(self):
         # The template caps and duration judgments are gone:
@@ -179,7 +179,6 @@ class StoryInvariantTests(unittest.TestCase):
         block = story_invariants.evaluate_invariants(artifact, {})
         _assert_summary(self, block)
         self.assertTrue(_check(block, "section_count")["held"])
-        self.assertTrue(_check(block, "declared_section_count_match")["held"])
         # The section_shares tautology is removed as a check:
         # its honest content lives on as the section_share_off
         # comparison finding.
@@ -202,10 +201,6 @@ class StoryInvariantTests(unittest.TestCase):
         block = story_invariants.evaluate_invariants(artifact, {})
         _assert_summary(self, block)
         self.assertFalse(_check(block, "section_count")["held"])
-        declared = _check(block, "declared_section_count_match")
-        self.assertFalse(declared["held"])
-        self.assertEqual(declared["value"]["section_count"], 1)
-        self.assertEqual(declared["value"]["declared_section_count"], 2)
         ids = [entry["id"] for entry in block["checked"]]
         for removed in REMOVED_STORY_IDS:
             self.assertNotIn(removed, ids)
@@ -245,9 +240,7 @@ class DrawingInvariantTests(unittest.TestCase):
         viewbox = _check(block, "viewbox_present")
         self.assertTrue(viewbox["held"])
         self.assertEqual(viewbox["value"], "0 0 100 100")
-        declared = _check(block, "declared_element_ids_presence")
-        self.assertTrue(declared["held"])
-        self.assertEqual(declared["value"], {"a": True, "b": True})
+        self.assertEqual(_check(block, "required_elements_present")["value"], ["a", "b"])
         self.assertTrue(_check(block, "declared_overlap_rules")["held"])
 
     def test_faulted_drawing_breaks_required_and_overlap(self):
@@ -271,9 +264,7 @@ class DrawingInvariantTests(unittest.TestCase):
         required = _check(block, "required_elements_present")
         self.assertFalse(required["held"])
         self.assertEqual(required["violations"], ["c"])
-        declared = _check(block, "declared_element_ids_presence")
-        self.assertFalse(declared["held"])
-        self.assertEqual(declared["value"], {"a": True, "b": True, "c": False})
+        self.assertEqual(required["violations"], ["c"])
         self.assertFalse(_check(block, "declared_overlap_rules")["held"])
 
     def test_missing_viewbox_is_reported_not_rejected(self):
@@ -432,7 +423,7 @@ class AnimationInvariantTests(unittest.TestCase):
         self.assertEqual(order["violations"][0]["times"], [2.0, 0.0])
 
 
-class SoundDesignInvariantTests(unittest.TestCase):
+class SoundEventInvariantTests(unittest.TestCase):
     def _artifact(self):
         return {
             "duration": 5.0,
@@ -456,7 +447,7 @@ class SoundDesignInvariantTests(unittest.TestCase):
             {"id": "hit", "onset_time": 0.0, "realized_duration": 0.5},
             {"id": "wash", "onset_time": 1.0, "realized_duration": 1.0},
         ])
-        block = sound_design_invariants.evaluate_invariants(
+        block = music_invariants.evaluate_invariants(
             artifact, {"delivered_events": copy.deepcopy(artifact["events"])}, evidence
         )
         _assert_summary(self, block)
@@ -472,7 +463,7 @@ class SoundDesignInvariantTests(unittest.TestCase):
         evidence = self._evidence([
             {"id": "hit", "onset_time": 2.0, "realized_duration": 0.0},
         ])
-        block = sound_design_invariants.evaluate_invariants(
+        block = music_invariants.evaluate_invariants(
             artifact,
             {"delivered_events": [copy.deepcopy(artifact["events"][0])]},
             evidence,
