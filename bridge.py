@@ -23,12 +23,13 @@ Start it with:
 
 Dependencies are this project's own only: the official mcp
 Python package, version 2.3.0, numpy, scipy, Pillow, and
-cairosvg. Model calls go through stage2.ember.ResponsesClient
+cairosvg when installed (used by the drawing renderer when
+installed; otherwise drawing renders raise). Model calls go through stage2.ember.ResponsesClient
 and SpendLedger, so the model (muse-ember-1.0), its default
 reasoning mode, the cost accounting, and the existing spend
 cap apply exactly as built.
 
-Animals of record: the trace at bridge_trace.jsonl in the
+Artifacts of record: the trace at bridge_trace.jsonl in the
 working directory by default, and the spend ledger at
 bridge_spend.jsonl by default. Together they are the run's
 record.

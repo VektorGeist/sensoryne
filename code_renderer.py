@@ -84,8 +84,6 @@ def _validate_relative_name(name):
             raise ValueError("unsafe delivered file name component in %r" % (name,))
         if part.lower() in _RESERVED_NAMES:
             raise ValueError("reserved delivered file name component in %r" % (name,))
-    if not parts:
-        raise ValueError("unsafe delivered file name: %r" % (name,))
     return parts
 
 

@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+sessions/
+*-trace.jsonl
+*-spend.jsonl

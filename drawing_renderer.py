@@ -5,9 +5,10 @@ at the viewBox size using cairosvg, with delivery faults applied
 in the rendering only.  If no SVG renderer is available in the
 environment, say so in those words instead of substituting
 anything.  The record carries the fault-applied delivered SVG
-itself, as the code and sound_design renderers carry their
-delivered structures, so the delivered document can be read
-without a rasterizer.
+itself, as the code and music renderers carry their
+delivered structures. When cairosvg is unavailable,
+renderer() raises before any record exists, so in that case
+no delivered document is read.
 """
 
 import copy

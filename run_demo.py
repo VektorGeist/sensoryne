@@ -48,7 +48,7 @@ APPS = {
     "code": ("stage2.apps.code.app", "code_renderer"),
     "typography": ("stage2.apps.typography.app", "typography_renderer"),
     "animation": ("stage2.apps.animation.app", "animation_renderer"),
-    "sound_design": ("stage2.apps.sound_design.app", "sound_design_renderer"),
+    "argument": ("stage2.apps.argument.app", "argument_renderer"),
 }
 
 OBJECTIVES = {
@@ -120,14 +120,9 @@ OBJECTIVES = {
         "frame_rate": 12,
         "canvas": {"width": 320, "height": 240},
     },
-    "sound_design": {
-        "intent": (
-            "A non-pitched sound work with a percussive hit, "
-            "filtered noise, and a silence, within six seconds."
-        ),
-        "duration": 6.0,
-        "event_count": 3,
-        "kinds": ["percussive hit", "filtered noise", "silence"],
+    "argument": {
+        "claim_count": 4,
+        "kinds": ["fact", "logic", "value"],
     },
 }
 
