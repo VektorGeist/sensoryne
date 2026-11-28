@@ -19,7 +19,6 @@ from ...decision import DECISION_SHAPE_TEXT
 from .instrument import perceive_image
 
 NAME = "drawing"
-SVG_RENDERER = "cairosvg"
 
 REVISION_SHAPE_TEXT = """Revisions are operations applied to the drawing, addressed by element id, in order. Each revision is validated against the parsed SVG, the result is re-parsed and re-validated, and a rejected revision leaves the current drawing unchanged.
 - {"op": "set_attribute", "id": "sun", "attribute": "cx", "value": "120"}: set one attribute on the element with that id.

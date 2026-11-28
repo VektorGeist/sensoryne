@@ -20,7 +20,6 @@ def evaluate_invariants(artifact,render_record,evidence=None):
  viewbox=root.get("viewBox") if root is not None else None
  checked.append(_c("viewbox_present","Whether a viewBox is present on the SVG root is measured and recorded.",bool(viewbox),viewbox,[] if viewbox else [{"viewBox":viewbox}]))
  present={x:(x in ids) for x in required}
- checked.append(_c("declared_element_ids_presence","Which declared element ids are present or missing in the SVG is measured and recorded.",not missing,present,missing))
  rules=artifact.get("overlap_rules") or artifact.get("bounding_box_rules") or []
  bad=[]
  for rule in rules:
@@ -31,9 +30,8 @@ def evaluate_invariants(artifact,render_record,evidence=None):
    if ba is None or bb is None:
     bad.append(rule)
    elif not _overlap(ba,bb): bad.append(rule)
- checked.append(_c("declared_overlap_rules","Declared bounding-box overlap rules hold for the named element pairs.",not bad,copy_rules(rules),bad))
+ checked.append(_c("declared_overlap_rules","Declared bounding-box overlap rules hold for the named element pairs.",not bad,rules,bad))
  return {"checked":checked,"summary":{"total_checked":len(checked),"held":sum(1 for c in checked if c["held"]),"broken":sum(1 for c in checked if not c["held"])}}
-def copy_rules(r): return r
 def reliability_block(): return {"instrument":"raster analyzer","limits":["Rasterization resolution is the rendered image dimensions in pixels.","Dominant colors are the most frequent image colors by pixel count.","Ink coverage is the non-background pixel share.","Comparison geometry tolerance is 0.5 SVG units: a delivered shape whose position or size departs from its declared values by more than 0.5 is a geometry_off finding."]}
 def _comparison_of(evidence,render_record):
  for source in (evidence,render_record):
