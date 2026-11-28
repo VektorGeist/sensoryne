@@ -148,7 +148,7 @@ def model_token_pack(pack):
   out.setdefault(k, v)
  return out
 model_facing_pack = model_token_pack
-def build_token_pack(path,num_segments=20,gallery=None,label_images=False,sample_rate=None):
+def build_token_pack(path,num_segments=20,sample_rate=None):
  samples,sr=load_wav(path) if isinstance(path,(str,bytes)) else (np.asarray(path,dtype=np.float64),int(sample_rate or 44100))
  sr=int(sr);frames=Cochlea(sr).analyze(samples);agg=aggregate_frames(frames,duration_seconds=len(samples)/sr if sr else None);descriptor=agg["descriptor"];weights=mode_weights(descriptor)
  nseg=int(num_segments)
@@ -163,13 +163,8 @@ def build_token_pack(path,num_segments=20,gallery=None,label_images=False,sample
   harm=harmonic_pitch(seg_samples,sr,cochlea_f0=seg_reading.get("f0") or seg_agg.get("median_pitch") or None)
   osc=oscilloscope_block(seg_samples,sr)
   match={"name":None,"nearest":None,"distance":None,"known":False,"candidates":[]}
-  if gallery is not None and hasattr(gallery,"recognize"):
-   from .trajectory import make_trajectory
-   match=gallery.recognize(seg_desc,make_trajectory(seg_frames) if seg_frames else None)
   chladni_img=np.asarray(draw_plate(seg_weights,size=32)).tolist();spec_img=np.asarray(render_field_image(place_time_field(seg_frames))).tolist() if seg_frames else np.zeros((32,1)).tolist()
   segments.append({"segment":idx+1,"start_time":float(st),"end_time":float(et),"times":[float(st),float(et)],"reading":seg_reading,"summary":seg_reading.get("sentence"),"heard":seg_reading.get("sentence"),"pitch_hz":float(seg_reading.get("pitch_hz") or 0),"f0":float(seg_reading.get("f0") or 0),"note":seg_reading.get("note"),"cents":seg_reading.get("cents"),"loud":float(seg_reading.get("loudness") or seg_agg.get("loudness") or 0),"loudness":float(seg_reading.get("loudness") or seg_agg.get("loudness") or 0),"brightness":float(seg_reading.get("brightness") or seg_agg.get("brightness") or 0),"centroid":float(seg_reading.get("brightness") or seg_agg.get("brightness") or 0),"peak_band":seg_agg.get("peak_band"),"region":seg_reading.get("region"),"pitch_trend":seg_reading.get("pitch_trend"),"loud_trend":seg_reading.get("loud_trend"),"onset_flux":float(seg_agg.get("onset_rate") or 0),"onset_rate":float(seg_agg.get("onset_rate") or 0),"chladni_modes":top_modes(seg_weights,5),"mode_weights":seg_weights,"chladni_weights":seg_weights,"gallery_match":match,"harmonic_pitch":harm["harmonic_pitch_hz"],"harmonic_midi":harm["harmonic_midi"],"harmonic_confidence":harm["confidence"],"polyphony_candidates":harm["candidates"],"oscilloscope":osc,"oscilloscope_block":osc,"chladni_image":chladni_img,"spectrogram_image":spec_img,"descriptor":seg_desc})
  phon=analyze_phonetics(frames,samples,sr);pack={"segment_count":nseg,"segments":nseg,"segments_data":segments,"duration":float(len(samples)/sr) if sr else 0.0,"sample_rate":sr,"phonetics":{"manner_fractions":phon["manner"],"manner":phon["manner"],"top_cues":phon["top_cues"],"mean_formants":phon["mean_formants"],"voice_onset_time":phon["voice_onset_time"],"voice_onset_time_ms":phon["voice_onset_time_ms"]},"descriptor":descriptor,"mode_weights":weights}
- if label_images:
-  from .labeled_images import relabel_pack;pack=relabel_pack(pack)
  return pack
 token_pack=build_token_pack;make_token_pack=build_token_pack
