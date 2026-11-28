@@ -1,13 +1,22 @@
-"""stage2/apps/animation/app.py - short animation application.
+"""stage2/apps/animation/app.py - the animation application.
 
-A planted time shift moves an interior keyframe, never the
-first or the last: shifting the start would be invisible to a
-renderer that holds the first keyframe's state until the next
-one, and shifting the end would change the track's end time.
-The shift fault therefore moves the keyframe at index 1 to
-the midpoint of the track, which changes the realized
-positions across the middle of the scene while leaving the
-first and last keyframes in place.
+Sensoryne receives the delivered frames produced on the
+composing side.  Inside Sensoryne this application keeps the
+artifact format and validation, revisions, the frame analyzer
+adapter, the input summary and structure record, delivery-fault
+definitions and ground-truth text, and the prompts.  Delivery
+faults are definitions recorded here and applied by the
+composing side; the delivered frames Sensoryne receives already
+carry them.
+
+# A planted time shift moves an interior keyframe, never the
+# first or the last: shifting the start would be invisible to a
+# renderer that holds the first keyframe's state until the next
+# one, and shifting the end would change the track's end time.
+# The shift fault moves the keyframe at index 1 to the midpoint
+# between its own time and the last keyframe's time, which
+# changes the realized positions across the middle of the scene
+# while leaving the first and last keyframes in place.
 """
 import copy, json
 
