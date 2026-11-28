@@ -7,12 +7,12 @@ Authorization: Bearer <API key>, the key read from MODEL_API_KEY.
 Ember is a reasoning model: its default reasoning mode is used
 and is never overridden or disabled.
 
-This module carries two clients.  ``ask_ember`` is the text-only
-call.  ``ResponsesClient`` carries the tools array and the
-response chain: it sends input items, returns the model's
-function_call items and text, accepts function_call_output
-items, and records every API call in the ledger with its usage
-and cost, as ask_ember does.
+This module carries ResponsesClient, which carries the tools
+array and the response chain: it sends input items, returns the
+model's function_call items and text, accepts
+function_call_output items, and records every API call in the
+ledger with its usage and cost, and SpendLedger, the append-only
+JSONL spend ledger.
 """
 
 import json
@@ -156,22 +156,6 @@ def _post(payload, ledger, session_id, purpose, prompt_record, reply_record):
     return result, usage, cost_usd
 
 
-def ask_ember(prompt, ledger, session_id, purpose):
-    """Call Muse Ember and return (reply_text, usage, cost_usd)."""
-    if not isinstance(ledger, SpendLedger):
-        ledger = SpendLedger(ledger)
-    payload = {"model": MODEL_ID, "input": prompt}
-    result, usage, cost_usd = _post(
-        payload,
-        ledger,
-        session_id,
-        purpose,
-        prompt_record=prompt,
-        reply_record=lambda r: _extract_reply_text(r),
-    )
-    return _extract_reply_text(result), usage, cost_usd
-
-
 def extract_function_calls(payload):
     """Return the model's function_call items from a response."""
     calls = []
@@ -274,13 +258,3 @@ class ResponsesClient:
             "cost_usd": cost_usd,
             "payload": result,
         }
-
-
-def call_responses(ledger, session_id, purpose, input_items, tools=None, previous_response_id=None):
-    """One chained Responses call; returns the client's result dict."""
-    return ResponsesClient(ledger, tools=tools).call(
-        input_items,
-        session_id,
-        purpose,
-        previous_response_id=previous_response_id,
-    )

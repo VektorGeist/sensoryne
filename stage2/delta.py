@@ -55,4 +55,3 @@ def compute_delta(from_version,to_version,before_m,after_m,before_s,after_s):
   "added_measurements":sorted(added),"removed_measurements":sorted(removed),
   "unchanged_keys":unchanged,
   "structural_diff":{"added":sorted(sa),"removed":sorted(sr),"modified":sorted(sm)}}
-measurements_delta=compute_delta

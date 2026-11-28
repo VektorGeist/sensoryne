@@ -8,13 +8,16 @@ tool return boundary, so a tool result stays bounded in size.
 What the shaped copy keeps in full: the summary, the measurements
 (including the token pack's per-segment stated figures - peak,
 RMS, zero crossings, summary values), the invariants with their
-values, the reliability block, the objective coverage, the delta
-where present, the structure record, and the input summary. The
-whole tool result (evidence plus structure_record, input_summary,
-artifact, session_so_far, presentation, and any other top-level
-fields the tool returns) is shaped as one document under one
-budget; the protected sections above are never bulk-replaced
-except under the oversize fallback below.
+values, the comparison with its findings in full (each finding's
+kind, where, written, delivered/heard and statement, its per_part
+figures, its summary and its tolerances), the reliability block,
+the objective coverage, the delta where present, the structure
+record, and the input summary. The whole tool result (evidence
+plus structure_record, input_summary, artifact, session_so_far,
+presentation, and any other top-level fields the tool returns) is
+shaped as one document under one budget; the protected sections
+above are never bulk-replaced except under the oversize fallback
+below.
 
 What is replaced by a reference: a raw bulk block - a waveform
 sample array, a spectrogram or field array, an image payload, or
@@ -65,7 +68,9 @@ Deciding what to replace, in order:
    first, re-measuring after each replacement, until the copy
    fits or nothing replaceable remains. The replacement never
    takes a protected container whole: the evidence document,
-   its summary, measurements, invariants, reliability block,
+   its summary, measurements, invariants, comparison (its
+   findings list, each finding and each finding's named fields,
+   its per_part, summary and tolerances), reliability block,
    objective coverage and delta, the token pack, its segment
    list and each segment dict, each oscilloscope dict, the
    invariants' checked list and entries, the structure record
@@ -73,12 +78,16 @@ Deciding what to replace, in order:
    figures. Only a subtree inside such a container is replaced,
    and only when it saves more than its reference costs: a
    per-segment reading, a mode or polyphony list, a per-note
-   violations list, or a per-note structure list. Each such
-   replacement states what the block is, its size, and that
-   its full data is held in the session record. Protected
-   scalar sections (summary, reliability, objective coverage,
-   delta) are never replaced as a whole; the invariants keep
-   each checked entry's id, description, held flag and value.
+   violations list, or a per-note structure list. Inside a
+   finding, only a bulky detail payload inside its written /
+   delivered / heard detail may be replaced; a finding's named
+   fields (kind, where, written, delivered/heard, statement)
+   always survive. Each such replacement states what the block
+   is, its size, and that its full data is held in the session
+   record. Protected scalar sections (summary, reliability,
+   objective coverage, delta) are never replaced as a whole;
+   the invariants keep each checked entry's id, description,
+   held flag and value.
 
 The budget applies per section. The evidence copy itself is
 enforced to the budget on its own sub-document, so the
@@ -91,7 +100,7 @@ Any other top-level field (presentation, session_so_far,
 artifact, hypothetical artifact) is unprotected and is enforced
 together under the budget on its own sub-document, so a large
 presentation string, session-so-far block or artifact cannot
-push the whole result over the proven size either. Shaping
+push the whole result over budget either. Shaping
 never mutates its input; it returns a deep copy.
 
 The model token pack is exempt from shaping in whole and in
@@ -100,14 +109,24 @@ inside a segment, at any budget. Bulk-by-name, duplicate-alias,
 and budget enforcement all carry the pack over byte-identical;
 every reduction needed to fit the budget comes from the other
 sections.
+
+The comparison is protected in the same sense as the invariants:
+shaping never reference-replaces the comparison whole, never
+drops or replaces a finding, and never replaces a finding's
+named fields. Bulk-by-name and duplicate-alias replacement do
+not apply inside the comparison outside a finding's detail
+payloads, and budget enforcement may replace only a bulky
+detail payload strictly inside a finding (a subtree inside its
+written / delivered / heard detail); the findings list, each
+finding, each named field, per_part, summary and tolerances
+always survive in full, for every application's comparison.
 """
 
 import copy
 import json
 
-# Aim: the shaped copy (the whole tool result document) stays
-# comfortably under the size proven to pass (about 99,000
-# characters), at roughly 50,000 characters.
+# The shaped copy (the whole tool result document) stays
+# under this budget of 50,000 characters.
 EVIDENCE_BUDGET = 50000
 
 # Keys that name raw payload data wherever they occur. Matched
@@ -170,12 +189,14 @@ _REPEAT_PATHS = (
 # Sections whose scalar content is protected during budget
 # enforcement. Only an oversize array inside them may be
 # reference-replaced, and only when the sections alone would
-# exceed the budget.
-_PROTECTED_TOP = frozenset({"summary", "reliability", "objective_coverage", "delta"})
+# exceed the budget. The comparison is protected by the
+# dedicated helpers below, in the same sense as the invariants
+# (which are likewise protected through their containers rather
+# than through this set), so that a bulky detail payload inside
+# a finding can still be a budget candidate while the findings
+# list and each finding's named fields never are.
+_PROTECTED_TOP = frozenset({"summary", "reliability", "objective_coverage", "delta", "decision_shape_text", "revision_shape_text"})
 
-_PROTECTED_EVIDENCE_KEYS = frozenset(
-    {"summary", "reliability", "objective_coverage", "delta"}
-)
 
 
 def _size(value):
@@ -229,8 +250,69 @@ def _is_model_pack_path(path):
     return False
 
 
+def _comparison_parts(path):
+    """Return (parts, prefix_len) for a comparison path, else (None, 0)."""
+    parts = path.split(".") if path else []
+    if len(parts) >= 2 and parts[0] == "evidence" and parts[1] == "comparison":
+        return parts, 2
+    if parts and parts[0] == "comparison":
+        return parts, 1
+    return None, 0
+
+
+def _is_comparison_path(path):
+    """True for the comparison section and anything inside it."""
+    parts, _pref = _comparison_parts(path)
+    return parts is not None
+
+
+def _is_comparison_finding_detail_path(path):
+    """True only strictly inside a finding's written/delivered/heard detail.
+
+    A finding is ``...comparison.findings.<index>`` and its named
+    fields are the immediate children of that dict. Anything
+    deeper than a named field is detail payload and may be
+    reference-replaced under budget pressure; the findings list,
+    a finding itself, and every named field are not detail.
+    """
+    parts, pref = _comparison_parts(path)
+    if parts is None:
+        return False
+    if len(parts) <= pref + 3:
+        return False
+    if parts[pref] != "findings":
+        return False
+    try:
+        int(parts[pref + 1])
+    except Exception:
+        return False
+    return True
+
+
+def _is_comparison_no_recurse_path(path):
+    """True for comparison subtrees that are never shaping candidates.
+
+    ``per_part``, ``summary``, ``tolerances`` and every other
+    immediate child of the comparison (and everything inside
+    them) are kept in full. The comparison root, the findings
+    list, each finding and each finding field are also protected
+    as containers, but traversal recurses through them to reach
+    a finding's detail payloads, so they are not no-recurse.
+    """
+    parts, pref = _comparison_parts(path)
+    if parts is None:
+        return False
+    if len(parts) <= pref:
+        return False
+    if parts[pref] == "findings":
+        return False
+    return True
+
+
 def _replace_bulk(node, path, replacements):
     """Replace bulk-keyed subtrees in place (on a copy)."""
+    if _is_comparison_no_recurse_path(path):
+        return
     if isinstance(node, dict):
         for key in list(node.keys()):
             child_path = "%s.%s" % (path, key) if path else str(key)
@@ -239,7 +321,7 @@ def _replace_bulk(node, path, replacements):
             # them; only their own budget enforcement (when a
             # section alone is over budget) may replace their
             # largest subtrees.
-            if child_path in ("structure_record", "input_summary"):
+            if child_path in ("structure_record", "input_summary", "decision_shape_text", "revision_shape_text", "evidence.decision_shape_text", "evidence.revision_shape_text"):
                 continue
             # The model-facing token pack is carried whole:
             # its segment envelopes, mode weights, and
@@ -247,6 +329,15 @@ def _replace_bulk(node, path, replacements):
             # and are never bulk-replaced. Only the stored
             # token pack under evidence.full may be replaced.
             if _is_model_pack_path(child_path):
+                continue
+            # The comparison is carried in full: bulk replacement
+            # never takes the comparison, a finding, or a
+            # finding's named field whole. Only bulk keys
+            # strictly inside a finding's detail payload may be
+            # replaced, so traversal recurses through the
+            # protected comparison containers to reach them.
+            if _is_comparison_path(child_path) and not _is_comparison_finding_detail_path(child_path):
+                _replace_bulk(node[key], child_path, replacements)
                 continue
             if _is_bulk_key(key):
                 value = node[key]
@@ -273,9 +364,14 @@ def _replace_duplicates(node, path, replacements):
     by exact equality of the two sibling values, so distinct
     figures that merely share a name are kept.
     """
-    if path in ("structure_record", "input_summary"):
+    if path in ("structure_record", "input_summary", "decision_shape_text", "revision_shape_text", "evidence.decision_shape_text", "evidence.revision_shape_text"):
         return
     if _is_model_pack_path(path):
+        return
+    # The comparison reaches the model whole: duplicate-alias
+    # replacement never applies inside it, so no finding or
+    # named field can be replaced as a duplicate.
+    if _is_comparison_path(path):
         return
     if isinstance(node, dict):
         # Top-level heard duplicates the evidence summary.
@@ -396,7 +492,7 @@ def _is_protected_section(path):
         return True
     if parts[0] in _PROTECTED_TOP:
         return True
-    if parts[0] == "evidence" and len(parts) > 1 and parts[1] in _PROTECTED_EVIDENCE_KEYS:
+    if parts[0] == "evidence" and len(parts) > 1 and parts[1] in _PROTECTED_TOP:
         return True
     return False
 
@@ -405,6 +501,13 @@ def _is_protected_container(path):
     """Containers never replaced whole during budget enforcement."""
     parts = path.split(".") if path else []
     if _is_model_pack_path(path):
+        return True
+    # The comparison, its findings list, each finding, each
+    # finding's named fields, and its per_part / summary /
+    # tolerances (and every other comparison child) are never
+    # replaced whole. Only a bulky detail payload strictly
+    # inside a finding is a budget candidate.
+    if _is_comparison_path(path) and not _is_comparison_finding_detail_path(path):
         return True
     if path in (
         "",
@@ -458,7 +561,18 @@ def _collect_candidates(node, path, out):
         # The model token pack is exempt in whole and in part:
         # no node inside it is ever a budget candidate.
         return
+    if _is_comparison_no_recurse_path(path):
+        # per_part, summary, tolerances and every other
+        # comparison child outside the findings list are kept
+        # in full: no node inside them is a budget candidate.
+        return
     if isinstance(node, str):
+        # A finding's named fields (kind, where, statement and
+        # the scalar fields themselves) always survive, however
+        # long they are; only a string strictly inside a
+        # finding's detail payload may be a candidate.
+        if _is_comparison_path(path) and not _is_comparison_finding_detail_path(path):
+            return
         # A lone oversize string (for example a long
         # presentation) is replaceable; ordinary short strings
         # are not budget candidates.
@@ -562,6 +676,13 @@ def _enforce_budget(shaped, budget, replacements):
         for size, path in candidates:
             if _is_protected_section(path):
                 continue
+            # The comparison is never replaced whole and no
+            # finding or named field is ever replaced: only a
+            # bulky detail payload strictly inside a finding
+            # may be chosen, and _collect_candidates only ever
+            # offers such payloads from the comparison.
+            if _is_comparison_path(path) and not _is_comparison_finding_detail_path(path):
+                continue
             # Only replace when the saving beats the reference:
             # a subtree no larger than its reference would make
             # the copy bigger, not smaller, and must stay in full.
@@ -578,6 +699,8 @@ def _enforce_budget(shaped, budget, replacements):
             # list inside one, never the section itself.
             for size, path in candidates:
                 if not _is_protected_section(path):
+                    continue
+                if _is_comparison_path(path):
                     continue
                 node2 = _node_at(shaped, path)
                 if node2 is None:
@@ -644,7 +767,9 @@ def shape_document(document, budget=EVIDENCE_BUDGET, location="session record"):
     not mutated. The returned copy carries ``shaped_copy``,
     ``shaping_note``, ``complete_evidence_location`` and a
     compact ``shaping_replacements`` summary at its top level.
-    The model token pack is carried whole at any budget.
+    The model token pack is carried whole at any budget, and so
+    is the comparison (only bulky detail inside a finding may
+    be trimmed).
     """
     if not isinstance(document, dict):
         return document
@@ -666,7 +791,8 @@ def shape_document(document, budget=EVIDENCE_BUDGET, location="session record"):
         "sample arrays, spectrogram and field arrays, image payloads, and "
         "token pack segment raw data) are replaced by references stating "
         "what the block is and its size. The summary, measurements, "
-        "invariants with their values, reliability block, objective "
+        "invariants with their values, comparison with its findings in "
+        "full, reliability block, objective "
         "coverage, delta, structure record, and input summary are kept in "
         "full. The complete evidence is held in the session record."
     )
@@ -703,7 +829,7 @@ def shape_document(document, budget=EVIDENCE_BUDGET, location="session record"):
         _enforce_budget(ev_wrapped, budget - 4500, replacements)
         shaped["evidence"] = ev_wrapped["evidence"]
     shaped["shaping_replacements"] = _summarize_replacements(replacements)
-    for section in ("structure_record", "input_summary"):
+    for section in ("structure_record", "input_summary", "decision_shape_text", "revision_shape_text"):
         if section not in shaped:
             continue
         section_doc = {section: shaped[section]}
@@ -721,6 +847,8 @@ def shape_document(document, budget=EVIDENCE_BUDGET, location="session record"):
             "evidence",
             "structure_record",
             "input_summary",
+            "decision_shape_text",
+            "revision_shape_text",
             "shaped_copy",
             "shaping_note",
             "complete_evidence_location",

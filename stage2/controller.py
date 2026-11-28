@@ -7,7 +7,11 @@ render seam calling the supplied renderer, perception by
 condition, decision application with per-operation records,
 termination labels, and history logging. This module assembles
 no prompts of its own and decides nothing. It contains no
-application logic and no application vocabulary.
+application logic and no application vocabulary except
+_robustness, one music-specific path in the core, which
+renders the shared robustness variations for the music
+application through the generic variation and rendering
+seams.
 
 Renderer output contract: out_path is a single file path. Every
 renderer writes its primary output file exactly at out_path and
@@ -175,6 +179,14 @@ def _summary(ev):
         s = ev["measurements"].get("heard")
     return {"summary": s, "measurements": ev.get("measurements", {})}
 
+
+def _shape_fields(ctx):
+    fields = {"decision_shape_text": decision_module.DECISION_SHAPE_TEXT}
+    app = ctx.get("app") if isinstance(ctx, dict) else None
+    text = getattr(app, "REVISION_SHAPE_TEXT", None)
+    if isinstance(text, str) and text:
+        fields["revision_shape_text"] = text
+    return fields
 
 def _with_obj(ctx, art):
     c = copy.deepcopy(art)
@@ -432,6 +444,19 @@ def _render_perceive(ctx):
         ev = app.perceive(prec)
         ctx.setdefault("evidence_summaries", []).append(_summary(ev))
     structure = _structure(ctx, src)
+    # For Music & Sound, the comparison is computed and
+    # attached before invariants and coverage run, so those
+    # blocks read the same comparison figures that are
+    # stored in this pack. Other applications keep the
+    # original order, so their blocks are unchanged.
+    comp = None
+    comp_computed = False
+    if ev is not None and (getattr(app, "NAME", None) == "music" or ctx.get("application") == "music"):
+        comp = _comparison(ctx, src, rec, ev)
+        comp_computed = True
+        if comp is not None:
+            rec["comparison"] = comp
+            ev["comparison"] = comp
     inv = _invariants(ctx, src, rec, ev)
     rel = _reliability(ctx)
     cov = _coverage(ctx, src, rec, ev)
@@ -441,7 +466,8 @@ def _render_perceive(ctx):
     # and attached to both the performance record and the
     # evidence before either is stored, so the stored record
     # and the returned copy carry the same block.
-    comp = _comparison(ctx, src, rec, ev)
+    if not comp_computed:
+        comp = _comparison(ctx, src, rec, ev)
     rec["invariants"] = inv
     rec["reliability"] = rel
     rec["objective_coverage"] = cov
@@ -603,10 +629,21 @@ def submit_work(ctx, artifact):
         raise ValueError("work already submitted")
     app = ctx["app"]
     h = ctx["history"]
+    # A work may arrive as JSON text from a model client;
+    # extract its object the same way as the decision path
+    # and continue with the resulting dict. A string that
+    # carries no parseable object is left as-is, so
+    # validation still fails on it as it does now.
+    if isinstance(artifact, str):
+        try:
+            artifact = decision_module.parse_artifact(artifact)
+        except Exception:
+            pass
     h.log("tool_call", tool="sensoryne_submit_work", session_id=ctx["session_id"], artifact=artifact)
     errors = app.validate(artifact)
     if errors:
         result = {"valid": False, "session_id": ctx["session_id"], "errors": list(errors), "retry_prompt": app.composition_retry_prompt(ctx.get("objective"), errors, artifact)}
+        result.update(_shape_fields(ctx))
         h.log("tool_result", tool="sensoryne_submit_work", session_id=ctx["session_id"], valid=False, errors=list(errors))
         return result
     ctx["original_source"] = copy.deepcopy(artifact)
@@ -628,6 +665,7 @@ def submit_work(ctx, artifact):
         result = {"valid": True, "session_id": ctx["session_id"], "iteration": ctx["iteration"], "evidence": ev, "structure_record": structure, "input_summary": ins, "presentation": _presentation(ctx, ev, ins, structure)}
     else:
         result = {"valid": True, "session_id": ctx["session_id"], "iteration": ctx["iteration"], "structure_record": structure, "artifact": copy.deepcopy(ctx["current_source"]), "perception": "perception_skipped"}
+    result.update(_shape_fields(ctx))
     h.log("tool_result", tool="sensoryne_submit_work", session_id=ctx["session_id"], valid=True, iteration=ctx["iteration"])
     # The stored session record keeps the complete evidence
     # (logged in _render_perceive); only the copy handed back
@@ -703,6 +741,13 @@ def submit_decision(ctx, decision):
         raise ValueError("no work submitted")
     h.log("tool_call", tool="sensoryne_submit_decision", session_id=ctx["session_id"], decision=decision)
     try:
+        # A decision may arrive as JSON text from a model
+        # client; parse it the same way as the object form
+        # below and continue with the resulting dict. A
+        # genuinely unparseable string still ends the session
+        # as decision_unparseable through the handler below.
+        if isinstance(decision, str):
+            decision = decision_module.parse_decision(decision)
         parsed = decision_module.parse_decision(json.dumps(decision))
         if not _well_formed(parsed):
             raise ValueError("decision fields have the wrong types")
@@ -710,7 +755,9 @@ def submit_decision(ctx, decision):
         h.log("decision_unparseable", iteration=ctx.get("iteration", 0), error=str(exc))
         _end(ctx, "decision_unparseable", None)
         h.log("tool_result", tool="sensoryne_submit_decision", session_id=ctx["session_id"], ended_by="decision_unparseable")
-        return {"session_id": ctx["session_id"], "ended_by": "decision_unparseable", "error": str(exc)}
+        unparseable_result = {"session_id": ctx["session_id"], "ended_by": "decision_unparseable", "error": str(exc)}
+        unparseable_result.update(_shape_fields(ctx))
+        return unparseable_result
     h.log("decision", iteration=ctx.get("iteration", 0), decision=parsed)
     revisions = parsed.get("revisions") or []
     applied, rejected = _apply_atomic(ctx, revisions)
@@ -728,6 +775,7 @@ def submit_decision(ctx, decision):
         result = {"session_id": ctx["session_id"], "iteration": ctx["iteration"], "evidence": ev, "structure_record": copy.deepcopy(structure), "artifact": copy.deepcopy(ctx["current_source"]), "applied": applied, "rejected": rejected, "session_so_far": sofar}
     else:
         result = {"session_id": ctx["session_id"], "iteration": ctx["iteration"], "structure_record": copy.deepcopy(structure), "artifact": copy.deepcopy(ctx["current_source"]), "perception": "perception_skipped", "applied": applied, "rejected": rejected, "session_so_far": sofar}
+    result.update(_shape_fields(ctx))
     if parsed.get("complete") is True:
         _end(ctx, "model_complete", parsed.get("assessment"))
         result["ended_by"] = "model_complete"
@@ -760,8 +808,19 @@ def probe(ctx, decision):
     if not ctx.get("_work_submitted"):
         raise ValueError("no work submitted")
     h.log("tool_call", tool="sensoryne_probe", session_id=ctx["session_id"], decision=decision)
+    # A decision may arrive as JSON text from a model client;
+    # extract its object the same way and continue with the
+    # resulting dict. An unparseable string is left as-is, so
+    # the revisions-list check below still answers with its
+    # errors list.
+    if isinstance(decision, str):
+        try:
+            decision = decision_module.extract_json_object(decision)
+        except Exception:
+            pass
     if not isinstance(decision, dict) or not isinstance(decision.get("revisions"), list):
         result = {"probe": True, "valid": False, "errors": ["probe decision must carry a revisions list"]}
+        result.update(_shape_fields(ctx))
         h.log("tool_result", tool="sensoryne_probe", session_id=ctx["session_id"], valid=False)
         return result
     app = ctx["app"]
@@ -780,6 +839,7 @@ def probe(ctx, decision):
             rejected.append({"revision": rev, "error": str(exc)})
     if errors:
         result = {"probe": True, "valid": False, "errors": errors, "rejected": rejected}
+        result.update(_shape_fields(ctx))
         h.log("tool_result", tool="sensoryne_probe", session_id=ctx["session_id"], valid=False, errors=errors)
         return result
     out = os.path.join(ctx["session_dir"], "probe_render_%d" % (int(ctx.get("iteration", 0)) + 1))
@@ -796,10 +856,19 @@ def probe(ctx, decision):
     cov = _coverage(ctx, hypo, rec, None)
     if ctx.get("condition") == "perceptual":
         ev = app.perceive(prec)
+        _comp = None
+        _comp_computed = False
+        if getattr(app, "NAME", None) == "music" or ctx.get("application") == "music":
+            _comp = _comparison(ctx, hypo, rec, ev)
+            _comp_computed = True
+            if _comp is not None:
+                rec["comparison"] = _comp
+                ev["comparison"] = _comp
         ev["invariants"] = _invariants(ctx, hypo, rec, ev)
         ev["reliability"] = rel
         ev["objective_coverage"] = _coverage(ctx, hypo, rec, ev)
-        _comp = _comparison(ctx, hypo, rec, ev)
+        if not _comp_computed:
+            _comp = _comparison(ctx, hypo, rec, ev)
         if _comp is not None:
             ev["comparison"] = _comp
         next_id = "v%d-probe" % (_version_number(ctx.get("current_version_id")) + 1)
@@ -810,6 +879,7 @@ def probe(ctx, decision):
         result = ev
     else:
         result = {"probe": True, "structure_record": copy.deepcopy(structure), "artifact": copy.deepcopy(hypo), "perception": "perception_skipped", "invariants": inv, "reliability": rel, "objective_coverage": cov}
+    result.update(_shape_fields(ctx))
     h.log("tool_result", tool="sensoryne_probe", session_id=ctx["session_id"], probe=True, valid=True)
     # A probe stores nothing, so there is no stored copy to
     # keep whole: the returned hypothetical evidence is shaped
@@ -819,6 +889,189 @@ def probe(ctx, decision):
     if ctx.get("condition") == "perceptual":
         return shape_evidence(result)
     return shape_document(result)
+
+
+def resume_session(reg, session_id):
+    """Resume a session from its record on disk.
+
+    The session is located using the same roots open_session
+    resolves ( the pending store and session_root ), its
+    history.jsonl is read, and a session that ended as
+    model_complete is refused. Every other state is resumable:
+    no session_end at all, or an error ending such as
+    decision_unparseable. The live session state is rebuilt
+    from the record and registered under the existing id by
+    the same registration open_session performs, so the other
+    working tools operate on it unchanged. A session that is
+    already live in this process is returned as it stands:
+    it is not re-registered and, unless it had ended by an
+    error and must be made continuable again, no event is
+    logged for it.
+    """
+    if not isinstance(session_id, str) or not session_id:
+        raise ValueError("session_id required")
+    pending = _pending(reg)
+    store = pending.get("store") or ArtifactStore(pending.get("store_root") or os.path.join(os.getcwd(), "sessions", "artifacts"))
+    root = str(pending.get("session_root") or os.path.join(os.getcwd(), "sessions"))
+    sdir = os.path.join(root, session_id)
+    hist_path = os.path.join(sdir, "history.jsonl")
+    if not os.path.isdir(sdir) or not os.path.exists(hist_path):
+        raise ValueError("unknown session_id: %r" % (session_id,))
+    entries = []
+    try:
+        with open(hist_path, "r", encoding="utf-8") as handle:
+            for line in handle:
+                line = line.strip()
+                if line:
+                    entries.append(json.loads(line))
+    except Exception as exc:
+        raise ValueError("unknown session_id: %r" % (session_id,)) from exc
+    start = next((e for e in entries if e.get("event") == "session_start"), None)
+    if start is None:
+        raise ValueError("cannot resume session %r: no session_start in its record" % (session_id,))
+    ends = [e for e in entries if e.get("event") == "session_end"]
+    prior_ended_by = ends[-1].get("ended_by") if ends else None
+    if prior_ended_by == "model_complete":
+        raise ValueError("cannot resume session %r: it ended as model_complete" % (session_id,))
+    sessions_map = getattr(reg, "sessions", None)
+    live = sessions_map.get(session_id) if isinstance(sessions_map, dict) else None
+    if live is not None:
+        hist_live = live.get("history")
+        entries_live = getattr(hist_live, "entries", []) if hist_live is not None else []
+        if live.get("ended_by") is not None:
+            live["ended_by"] = None
+            live["assessment"] = None
+            if hist_live is not None:
+                hist_live.log("session_resumed", session_id=session_id, application=live.get("application"), version_resumed_at=live.get("current_version_id"), version_id=live.get("current_version_id"), prior_ended_by=prior_ended_by, iteration=live.get("iteration", 0))
+        sofar_live = decision_module.build_session_so_far(entries_live, live.get("evidence_summaries") or [])
+        result_live = {"session_id": session_id, "application": live.get("application"), "version_resumed_at": live.get("current_version_id"), "version_id": live.get("current_version_id"), "iteration": live.get("iteration", 0), "condition": live.get("condition"), "test": live.get("test"), "prior_ended_by": prior_ended_by, "session_so_far": sofar_live}
+        result_live.update(_shape_fields(live))
+        return result_live
+    artifact_id = start.get("artifact_id") or session_id
+    objective = copy.deepcopy(start.get("objective"))
+    condition = start.get("condition")
+    test_flag = start.get("test")
+    application = start.get("application")
+    record = None
+    try:
+        record = store.load(artifact_id)
+    except Exception:
+        record = None
+    if not application and isinstance(record, dict):
+        meta = record.get("metadata") if isinstance(record.get("metadata"), dict) else None
+        if meta and meta.get("application"):
+            application = meta.get("application")
+    for e in entries:
+        args_e = e.get("arguments") if isinstance(e.get("arguments"), dict) else None
+        if e.get("tool") == "sensoryne_open_session" and isinstance(args_e, dict):
+            if not application:
+                application = args_e.get("application")
+            if condition not in ("control", "perceptual"):
+                condition = args_e.get("condition")
+            if test_flag is None and "test" in args_e:
+                test_flag = args_e.get("test")
+    for e in entries:
+        if e.get("tool") == "sensoryne_open_session" and e.get("event") == "tool_result":
+            if condition not in ("control", "perceptual"):
+                condition = e.get("condition")
+            if test_flag is None and "test" in e:
+                test_flag = e.get("test")
+    if not application:
+        raise ValueError("cannot resume session %r: application is not recorded" % (session_id,))
+    if condition not in ("control", "perceptual"):
+        condition = "perceptual"
+    if test_flag is None:
+        test_flag = False
+    app = _app(application, pending)
+    renderer = _renderer(application, pending)
+    faults = copy.deepcopy(list(start.get("faults") or []))
+    gt = copy.deepcopy(start.get("ground_truth"))
+    if gt is None:
+        try:
+            gt = app.generate_ground_truth(faults) if faults else []
+        except Exception:
+            gt = []
+    versions = list(record.get("versions") or []) if isinstance(record, dict) else []
+    latest_version_id = versions[-1].get("version_id") if versions and isinstance(versions[-1], dict) else None
+    current_source = None
+    original_source = None
+    version_hashes = []
+    if versions:
+        try:
+            original_source = store.load_version_source(artifact_id, versions[0].get("version_id"))
+        except Exception:
+            original_source = None
+        if latest_version_id:
+            try:
+                current_source = store.load_version_source(artifact_id, latest_version_id)
+            except Exception:
+                current_source = None
+        for v in versions:
+            try:
+                version_hashes.append(_hash(store.load_version_source(artifact_id, v.get("version_id"))))
+            except Exception:
+                pass
+    if record is None:
+        try:
+            _store_entry(store, artifact_id, current_source or {}, objective, {"application": application, "session_id": session_id})
+        except Exception:
+            pass
+    iterations = []
+    for e in entries:
+        for key in ("iteration", "iterations"):
+            val = e.get(key)
+            if isinstance(val, int) and not isinstance(val, bool):
+                iterations.append(val)
+    iteration = max(iterations) if iterations else 0
+    renders = [e for e in entries if e.get("event") == "render"]
+    if renders and iteration == 0:
+        iteration = len(renders)
+    perceptions = [e for e in entries if e.get("event") == "perception"]
+    work_submitted = bool(renders or perceptions or any(e.get("event") == "perception_skipped" for e in entries))
+    last_structure = None
+    for e in reversed(entries):
+        if e.get("event") in ("render", "perception", "perception_skipped") and e.get("structure_record") is not None:
+            last_structure = copy.deepcopy(e.get("structure_record"))
+            break
+    last_evidence = copy.deepcopy(perceptions[-1].get("evidence")) if perceptions else None
+    evidence_summaries = [_summary(e.get("evidence")) for e in perceptions]
+    hist = _History(hist_path)
+    hist.entries = entries
+    if original_source is None and work_submitted and current_source is not None:
+        original_source = copy.deepcopy(current_source)
+    ctx = {"store": store, "app": app, "renderer": renderer, "session_root": root, "session_dir": sdir, "session_id": session_id, "artifact_id": artifact_id, "application": application, "objective": objective, "condition": condition, "test": bool(test_flag), "faults": faults, "ground_truth": gt, "max_iterations": int(pending.get("max_iterations") or 4), "iteration": int(iteration), "current_source": copy.deepcopy(current_source) if current_source is not None else None, "original_source": copy.deepcopy(original_source) if original_source is not None else None, "evidence_summaries": evidence_summaries, "history": hist, "ended_by": None, "assessment": None, "ledger_path": pending.get("ledger_path"), "_faults_planted": bool(faults) or any(e.get("event") == "faults_planted" for e in entries), "_work_submitted": bool(work_submitted), "_artifact_hashes": sorted(set(version_hashes)), "_revision_pairs": [], "current_version_id": latest_version_id, "current_structure": last_structure, "current_evidence": last_evidence, "current_measurements": copy.deepcopy(last_evidence.get("measurements", {})) if isinstance(last_evidence, dict) else None}
+    if ctx["current_structure"] is None and ctx["current_source"] is not None:
+        try:
+            ctx["current_structure"] = _structure(ctx, ctx["current_source"])
+        except Exception:
+            ctx["current_structure"] = None
+    revision_pairs = []
+    replay_hashes = []
+    if original_source is not None:
+        hypo = copy.deepcopy(original_source)
+        replay_hashes = [_hash(hypo)]
+        for e in entries:
+            if e.get("event") != "revision_applied":
+                continue
+            rev = e.get("revision")
+            try:
+                hypo = app.apply_revision(copy.deepcopy(hypo), copy.deepcopy(rev))
+            except Exception:
+                break
+            ch = _hash(hypo)
+            revision_pairs.append([_canon(rev), ch])
+            replay_hashes.append(ch)
+    ctx["_revision_pairs"] = revision_pairs
+    ctx["_artifact_hashes"] = sorted(set(list(ctx["_artifact_hashes"]) + replay_hashes))
+    if hasattr(reg, "register"):
+        reg.register(session_id, ctx)
+    else:
+        reg.sessions[session_id] = ctx
+    hist.log("session_resumed", session_id=session_id, application=application, version_resumed_at=latest_version_id, version_id=latest_version_id, prior_ended_by=prior_ended_by, iteration=int(iteration))
+    sofar = decision_module.build_session_so_far(hist.entries, evidence_summaries)
+    result = {"session_id": session_id, "application": application, "version_resumed_at": latest_version_id, "version_id": latest_version_id, "iteration": int(iteration), "condition": condition, "test": bool(test_flag), "prior_ended_by": prior_ended_by, "session_so_far": sofar}
+    result.update(_shape_fields(ctx))
+    return result
 
 
 def recall_memory(reg, application, limit):
@@ -847,29 +1100,3 @@ def finish_session(ctx):
     h.log("tool_result", tool="sensoryne_finish_session", session_id=ctx["session_id"], ended_by="model_complete")
     summary["session_id"] = ctx["session_id"]
     return summary
-
-
-def compose_and_store(store, app, ledger, ask, artifact_id, objective, session_id="demo-composition", max_attempts=3, metadata=None):
-    """Produce a stored artifact from a plain reply.
-
-    The live path composes through the tool surface. This
-    helper exists for a stored artifact produced without a
-    tool loop.
-    """
-    prompt = app.composition_prompt(objective)
-    last = []
-    for _ in range(1, int(max_attempts) + 1):
-        reply = ask(prompt, ledger, session_id, "composition")
-        try:
-            artifact = decision_module.parse_artifact(reply)
-        except Exception as exc:
-            last = ["could not parse artifact JSON: %s" % exc]
-            prompt = app.composition_retry_prompt(objective, last, reply)
-            continue
-        errors = app.validate(artifact)
-        if not errors:
-            store.create(artifact_id, artifact, objective, metadata=metadata or {})
-            return artifact
-        last = errors
-        prompt = app.composition_retry_prompt(objective, errors, artifact)
-    raise RuntimeError("composition failed: %s" % last)

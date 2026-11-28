@@ -2,8 +2,8 @@
 
 Serves the viewer and session files on localhost only, using
 the standard library. ``python3 -m stage2.viewer``. The viewer
-displays evidence and decisions exactly as recorded; it
-detects, and judges nothing, and needs no API key. Spend and
+displays evidence and decisions exactly as recorded,
+computes nothing of its own, and needs no API key. Spend and
 call counts are read from each run's own spend.jsonl inside
 its run directory. Each session's structure record and each
 stored delta are read from the session_start, perception, and
@@ -40,11 +40,54 @@ _PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _INDEX_PATH = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "viewer", "index.html"
 )
+_ICON_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "viewer", "sensoryne-icon.webp"
+)
 
 # Set by main() from --sessions-root / the environment. Kept as a
 # module global so _Handler (which has no config of its own) can
 # resolve the root the same way _discover_sessions does.
 _SESSIONS_ROOT_OVERRIDE = None
+
+# Settings keys live beside the sessions folder: the settings file
+# is sensoryne-settings.json in the parent directory of the
+# sessions root the viewer was started with. It is created on
+# first save and its absence is tolerated. Only booleans are
+# ever returned to the page; stored values are never sent back.
+_SETTINGS_FILENAME = "sensoryne-settings.json"
+
+
+def _settings_path():
+    return os.path.join(
+        os.path.dirname(os.path.abspath(_sessions_root())),
+        _SETTINGS_FILENAME,
+    )
+
+
+def _read_settings():
+    try:
+        with open(_settings_path(), "r", encoding="utf-8") as handle:
+            data = json.load(handle)
+    except (OSError, ValueError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _settings_status(data):
+    return {
+        "worker_key_set": bool(data.get("worker_key")),
+        "judge_key_set": bool(data.get("judge_key")),
+    }
+
+
+def _write_settings(data):
+    path = _settings_path()
+    parent = os.path.dirname(path)
+    if parent:
+        os.makedirs(parent, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as handle:
+        json.dump(data, handle)
+
 
 
 def _sessions_root():
@@ -274,16 +317,41 @@ class _Handler(BaseHTTPRequestHandler):
                 self.wfile.write(chunk)
                 chunk = handle.read(65536)
 
+    def _send_icon(self):
+        if not os.path.isfile(_ICON_PATH):
+            self.send_error(404)
+            return
+        self.send_response(200)
+        self.send_header("Content-Type", "image/webp")
+        self.send_header("Content-Length", str(os.path.getsize(_ICON_PATH)))
+        self.end_headers()
+        with open(_ICON_PATH, "rb") as handle:
+            chunk = handle.read(65536)
+            while chunk:
+                self.wfile.write(chunk)
+                chunk = handle.read(65536)
+
     def do_GET(self):
         parsed = urlparse(self.path)
         path = unquote(parsed.path)
         if path in ("/", "/index.html"):
             self._send_file(_INDEX_PATH)
             return
+        if path in ("/sensoryne-icon.webp", "/viewer/sensoryne-icon.webp"):
+            self._send_icon()
+            return
         if path == "/api/sessions":
             body = json.dumps(
                 _discover_sessions(_sessions_root())
             ).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
+        if path == "/api/settings":
+            body = json.dumps(_settings_status(_read_settings())).encode("utf-8")
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", str(len(body)))
@@ -313,6 +381,49 @@ class _Handler(BaseHTTPRequestHandler):
             self.send_error(404)
             return
         self.send_error(404)
+
+    def do_POST(self):
+        parsed = urlparse(self.path)
+        path = unquote(parsed.path)
+        if path != "/api/settings":
+            self.send_error(404)
+            return
+        try:
+            length = int(self.headers.get("Content-Length") or 0)
+        except ValueError:
+            length = 0
+        raw = self.rfile.read(length) if length > 0 else b""
+        try:
+            data = json.loads(raw.decode("utf-8")) if raw else {}
+        except ValueError:
+            data = {}
+        if not isinstance(data, dict):
+            data = {}
+        settings = _read_settings()
+        changed = False
+        # A non-empty key value stores it; an empty string or an
+        # absent field leaves that key unchanged.
+        if isinstance(data.get("worker_key"), str) and data["worker_key"]:
+            if settings.get("worker_key") != data["worker_key"]:
+                settings["worker_key"] = data["worker_key"]
+                changed = True
+        if isinstance(data.get("judge_key"), str) and data["judge_key"]:
+            if settings.get("judge_key") != data["judge_key"]:
+                settings["judge_key"] = data["judge_key"]
+                changed = True
+        if data.get("remove") in ("worker", "judge"):
+            field = "worker_key" if data["remove"] == "worker" else "judge_key"
+            if field in settings:
+                del settings[field]
+                changed = True
+        if changed:
+            _write_settings(settings)
+        body = json.dumps(_settings_status(settings)).encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
 
 
 def main(argv=None):

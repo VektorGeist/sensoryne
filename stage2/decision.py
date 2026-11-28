@@ -74,6 +74,17 @@ def build_session_so_far(history_entries, evidence_summaries=None):
                     entry.get("error"),
                 )
             )
+        elif event == "judgment":
+            verdict = entry.get("verdict") or {}
+            lines.append(
+                "Judgments: bottom_line (bottom line): %s; judgment: %s; strengths: %s; weaknesses: %s"
+                % (
+                    verdict.get("bottom_line"),
+                    verdict.get("judgment"),
+                    json.dumps(verdict.get("strengths", [])),
+                    json.dumps(verdict.get("weaknesses", [])),
+                )
+            )
         elif event == "perception" and summary_index < len(evidence_summaries):
             lines.append(
                 "Earlier evidence summary (iteration %s): %s"
