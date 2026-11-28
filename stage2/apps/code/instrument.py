@@ -5,11 +5,10 @@ stated test, with a 10 second limit per test.  Records exit
 status, standard output, standard error, run time, whether the
 limit was hit, and whether the output matches the expected
 output exactly.  It reports those facts; it does not judge.
+The execution environment is not a security sandbox.
 """
 
 import os
-import runpy
-import shutil
 import subprocess
 import sys
 import tempfile
@@ -17,8 +16,7 @@ import time
 
 METHOD = (
     "delivered files copied into a closed temporary directory; "
-    "the entry file (main.py if present, otherwise the first "
-    "file) is run once per stated test with the test's input "
+    "the entry file is main.py, run once per stated test with the test's input "
     "fed on standard input, in a subprocess whose socket module "
     "is disabled before the program starts; 10 second limit per "
     "test; standard output compared to the expected output "

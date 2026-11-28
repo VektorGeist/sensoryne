@@ -18,7 +18,6 @@ here unchanged: a 10 second limit per stated check and exact
 character-for-character output comparison.
 """
 
-import copy
 import os
 
 __all__ = [

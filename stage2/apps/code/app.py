@@ -75,18 +75,6 @@ def _validate_file_name(name):
     return name
 
 
-def _safe_target(render_root, name):
-    """Resolve a target inside render_root or raise ValueError."""
-    _validate_file_name(name)
-    root = Path(render_root).resolve()
-    parts = name.replace("\\", "/").split("/")
-    candidate = root.joinpath(*parts)
-    resolved = candidate.resolve()
-    if os.path.commonpath([str(root), str(resolved)]) != str(root):
-        raise ValueError("file path escapes the render root: %r" % (name,))
-    return resolved
-
-
 def _file_name_errors(name):
     try:
         _validate_file_name(name)
@@ -199,7 +187,7 @@ Input summary:
 Structure record (files with line counts, functions and top-level parts in each file by name, purpose, and test list):
 %s
 
-OUTPUT (what was delivered): the delivered program, with the instrument's full evidence about it below. The instrument executes the program and records the facts; it does not judge. Judge the delivered program against what was written and the objective.
+OUTPUT (what was delivered): the delivered program, with the instrument's full evidence about it below. Judge the delivered program against what was written and the objective.
 
 Evidence:
 %s
