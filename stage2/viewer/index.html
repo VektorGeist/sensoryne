@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Sensoryne — Perceptual Intelligence Interface</title>
+<title>Independent Perceptual Evaluation and Improvement Platform</title>
+<link rel="icon" type="image/webp" href="sensoryne-icon.webp">
 <style>
 :root{
   --bg:#141518; --bg2:#1A1C1F; --panel:#1F2125; --panel-2:#24272C; --elev:#2A2E34;
@@ -13,36 +14,47 @@
   --brass:#C9A86A; --brass-strong:#B8934F; --brass-dim:#5C4E32;
   --red:#E07A6B; --cyan:var(--teal); --green:var(--teal); --amber:var(--brass);
   --radius:10px; --radius-sm:6px;
-  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:24px; --space-6:32px;
-  --text-xs:11px; --text-sm:13px; --text-md:14px; --text-lg:18px; --text-xl:22px; --text-2xl:26px;
+  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:24px; --space-6:32px; --space-7:48px; --space-8:64px;
+  --text-xs:11px; --text-sm:13px; --text-md:14px; --text-lg:18px; --text-xl:22px; --text-2xl:30px;
   --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   --mono:ui-monospace,"Cascadia Code","JetBrains Mono",Consolas,"Courier New",monospace;
+  --shadow:0 8px 24px rgba(0,0,0,.28); --shadow-sm:0 4px 14px rgba(0,0,0,.28);
 }
 *{box-sizing:border-box}
-html,body{height:100%}
-body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:var(--text-md);line-height:1.5}
-a{color:var(--teal)}
-button{font:inherit;color:var(--text);background:var(--panel-2);border:1px solid var(--line);border-radius:var(--radius-sm);padding:var(--space-2) var(--space-3);cursor:pointer;min-height:32px;transition:background .18s ease,border-color .18s ease,color .18s ease}
-button:hover{border-color:var(--teal)}
+html,body{min-height:100%}
+body{margin:0;color:var(--text);font-family:var(--sans);font-size:var(--text-md);line-height:1.55;-webkit-font-smoothing:antialiased;background:radial-gradient(1200px 600px at 85% -10%,rgba(53,196,181,.08),transparent 60%),radial-gradient(900px 520px at -10% 110%,rgba(201,168,106,.07),transparent 55%),var(--bg)}
+a{color:var(--teal);text-underline-offset:3px;transition:color .18s ease}
+a:hover{color:var(--brass)}
+button{font:inherit;color:var(--text);background:linear-gradient(180deg,var(--panel-2),var(--elev));border:1px solid var(--line);border-radius:var(--radius-sm);padding:var(--space-2) var(--space-3);cursor:pointer;min-height:32px;transition:background .18s ease,border-color .18s ease,color .18s ease,transform .18s ease,box-shadow .18s ease}
+button:hover{border-color:var(--teal);color:var(--teal);transform:translateY(-1px);box-shadow:var(--shadow-sm)}
+button:active{transform:translateY(0);box-shadow:none}
 button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
-button[aria-pressed="true"]{background:var(--elev);border-color:var(--teal);color:var(--teal)}
-input,select{font:inherit;color:var(--text);background:var(--bg2);border:1px solid var(--line);border-radius:var(--radius-sm);padding:var(--space-2);min-height:32px;width:100%}
+button[aria-pressed="true"]{background:linear-gradient(180deg,var(--elev),var(--panel-2));border-color:var(--teal);color:var(--teal);box-shadow:inset 0 0 0 1px rgba(53,196,181,.35)}
+input,select{font:inherit;color:var(--text);background:var(--bg2);border:1px solid var(--line);border-radius:var(--radius-sm);padding:var(--space-2);min-height:32px;width:100%;transition:border-color .18s ease,box-shadow .18s ease,background .18s ease}
+input:focus,select:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(53,196,181,.18);outline:none;background:var(--panel)}
+input::placeholder{color:var(--faint)}
+select{cursor:pointer}
 code,.mono{font-family:var(--mono);font-size:var(--text-sm)}
 .empty,.missing{color:var(--secondary);font-size:var(--text-sm);line-height:1.5;padding:var(--space-2) 0;margin:0}
 .small{font-size:var(--text-sm);color:var(--secondary)}
-.eyebrow{font-size:var(--text-xs);letter-spacing:.1em;text-transform:uppercase;color:var(--faint);font-weight:700}
-h1,h2,h3,h4{margin:0;line-height:1.3}
-h1{font-size:var(--text-xl)}
-h2{font-size:var(--text-lg)}
+.eyebrow{font-size:var(--text-xs);letter-spacing:.12em;text-transform:uppercase;color:var(--faint);font-weight:700}
+h1,h2,h3,h4{margin:0;line-height:1.25;font-weight:700}
+h1{font-size:var(--text-2xl)}
+h2{font-size:var(--text-lg);letter-spacing:.01em}
 h3{font-size:var(--text-md)}
-h4{font-size:var(--text-sm);text-transform:uppercase;letter-spacing:.06em;color:var(--secondary)}
-pre{background:var(--bg);border:1px solid var(--line2);border-radius:var(--radius-sm);padding:var(--space-3);font-family:var(--mono);font-size:var(--text-sm);white-space:pre-wrap;word-break:break-word;max-height:420px;overflow:auto;margin:var(--space-2) 0}
+h4{font-size:var(--text-sm);text-transform:uppercase;letter-spacing:.07em;color:var(--secondary)}
+pre{background:var(--bg);border:1px solid var(--line2);border-radius:var(--radius-sm);padding:var(--space-3);font-family:var(--mono);font-size:var(--text-sm);white-space:pre-wrap;word-break:break-word;margin:var(--space-2) 0}
 table{width:100%;border-collapse:collapse;font-size:var(--text-sm);margin:var(--space-2) 0}
 th,td{border-bottom:1px solid var(--line2);padding:var(--space-2);text-align:left;vertical-align:top;word-break:break-word}
-th{color:var(--secondary);font-size:var(--text-xs);text-transform:uppercase;letter-spacing:.05em}
-.card{background:var(--panel);border:1px solid var(--line2);border-radius:var(--radius);padding:var(--space-4);margin-bottom:var(--space-4)}
-.card h2,.card h3{margin-bottom:var(--space-2)}
-.badge{display:inline-flex;align-items:center;gap:var(--space-1);border:1px solid var(--line);border-radius:999px;padding:var(--space-1) var(--space-3);font-size:var(--text-xs);color:var(--secondary);background:var(--bg2);white-space:nowrap}
+tbody tr{transition:background .15s ease}
+tbody tr:hover{background:rgba(53,196,181,.05)}
+th{color:var(--secondary);font-size:var(--text-xs);text-transform:uppercase;letter-spacing:.06em}
+.card{background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line2);border-radius:var(--radius);padding:var(--space-5);margin-bottom:var(--space-4);box-shadow:var(--shadow);transition:border-color .2s ease,box-shadow .2s ease}
+.card:hover{border-color:var(--line)}
+.card h2{display:flex;align-items:center;gap:var(--space-2)}
+.card h2::before{content:"";width:4px;height:1.1em;border-radius:2px;background:linear-gradient(180deg,var(--teal),var(--brass));flex:none}
+.card h2,.card h3{margin-bottom:var(--space-3)}
+.badge{display:inline-flex;align-items:center;gap:var(--space-1);border:1px solid var(--line);border-radius:999px;padding:var(--space-1) var(--space-3);font-size:var(--text-xs);color:var(--secondary);background:var(--bg2);white-space:nowrap;transition:border-color .18s ease,color .18s ease}
 .badge .dot{width:7px;height:7px;border-radius:50%;background:var(--faint);display:inline-block;flex:none}
 .badge.ok{color:var(--teal);border-color:var(--teal-dim)}.badge.ok .dot{background:var(--teal)}
 .badge.warn{color:var(--brass);border-color:var(--brass-dim)}.badge.warn .dot{background:var(--brass)}
@@ -52,84 +64,111 @@ th{color:var(--secondary);font-size:var(--text-xs);text-transform:uppercase;lett
 .btn-row button{font-size:var(--text-sm)}
 .btn-row button.active{background:var(--elev);border-color:var(--teal);color:var(--teal)}
 .copy-note{font-size:var(--text-xs);color:var(--teal);margin-left:var(--space-2)}
-#app{display:grid;grid-template-columns:280px minmax(0,1fr) 360px;grid-template-rows:auto 1fr;grid-template-areas:"head head head" "left center right";gap:var(--space-4);padding:var(--space-4);height:100vh;background:var(--bg)}
-header{grid-area:head;display:flex;justify-content:space-between;align-items:center;gap:var(--space-4);padding:var(--space-3) var(--space-4);background:var(--panel);border:1px solid var(--line2);border-radius:var(--radius)}
-.brand{display:flex;align-items:baseline;gap:var(--space-3);min-width:0;flex-wrap:wrap}
-.brand .name{font-size:var(--text-xl);font-weight:700;letter-spacing:.01em}
-.brand .tag{color:var(--secondary);font-size:var(--text-sm)}
+.skip-link{position:absolute;left:var(--space-4);top:-64px;z-index:100;background:var(--teal);color:#0C1A18;padding:var(--space-2) var(--space-3);border-radius:var(--radius-sm);font-weight:700;transition:top .2s ease}
+.skip-link:focus{top:var(--space-3)}
+#app{display:block;max-width:1280px;margin:0 auto;padding:var(--space-5);background:transparent}
+header{display:flex;position:sticky;top:0;z-index:40;justify-content:space-between;align-items:center;gap:var(--space-5);padding:var(--space-4) var(--space-5);background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line2);border-top:3px solid var(--teal);border-radius:var(--radius);box-shadow:var(--shadow)}
+.brand{display:flex;align-items:center;gap:var(--space-3);min-width:0}
+.brand-icon{width:44px;height:44px;flex:none;border-radius:12px;border:1px solid var(--brass-dim);background:var(--bg2);object-fit:cover;box-shadow:var(--shadow-sm)}
+.brand-text{display:flex;flex-direction:column;gap:var(--space-1);min-width:0}
+.brand .name{font-size:var(--text-xl);font-weight:800;letter-spacing:.02em;line-height:1.2}
+.brand .tag{color:var(--secondary);font-size:var(--text-sm);line-height:1.35}
 .header-actions{display:flex;gap:var(--space-2);flex-wrap:wrap;align-items:center}
-#left{grid-area:left;overflow-y:auto;padding:var(--space-4);background:var(--panel);border:1px solid var(--line2);border-radius:var(--radius);min-width:0}
-#center{grid-area:center;overflow-y:auto;min-width:0;padding-right:var(--space-1)}
-#center>*{max-width:880px;margin-left:auto;margin-right:auto}
-#right{grid-area:right;overflow-y:auto;padding:var(--space-4);background:var(--panel);border:1px solid var(--line2);border-radius:var(--radius);min-width:0}
-#left h2,#right h2{margin-bottom:var(--space-3)}
-.session-tools{display:flex;flex-direction:column;gap:var(--space-2);margin-bottom:var(--space-3)}
-.session-tools label{font-size:var(--text-xs);color:var(--secondary)}
-.session-row{display:block;width:100%;text-align:left;margin-bottom:var(--space-2);padding:var(--space-2) var(--space-3);background:var(--panel-2);border:1px solid var(--line2);border-left:3px solid var(--line)}
+#left{display:block;width:100%;padding:var(--space-5);margin-bottom:var(--space-5);background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line2);border-radius:var(--radius);min-width:0;box-shadow:var(--shadow)}
+#center{display:block;width:100%;min-width:0;margin-bottom:var(--space-5)}
+#right{display:block;width:100%;padding:var(--space-5);margin-bottom:var(--space-5);background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line2);border-radius:var(--radius);min-width:0;box-shadow:var(--shadow)}
+#left h2,#right h2{display:flex;align-items:center;gap:var(--space-2)}
+#left h2::before,#right h2::before{content:"";width:4px;height:1.1em;border-radius:2px;background:linear-gradient(180deg,var(--teal),var(--brass));flex:none}
+#left h2,#right h2{margin-bottom:var(--space-4)}
+.session-header-row{display:flex;justify-content:space-between;gap:var(--space-3);flex-wrap:wrap;align-items:flex-start}
+.section-header-row{display:flex;justify-content:space-between;align-items:center;gap:var(--space-2);flex-wrap:wrap}
+.session-title{font-size:var(--text-2xl);word-break:break-all;margin-top:var(--space-1)}
+.stack-top{margin-top:var(--space-3)}
+.select-auto{width:auto}
+.story-section{margin-bottom:var(--space-4)}
+.subhead{margin-top:var(--space-3)}
+.v-small{font-size:var(--text-xs)}
+.music-header-card{background:var(--bg2)}
+.session-tools{display:flex;flex-direction:column;gap:var(--space-2);margin-bottom:var(--space-4);background:var(--bg2);border:1px solid var(--line2);border-radius:var(--radius-sm);padding:var(--space-3)}
+.session-tools label{font-size:var(--text-xs);color:var(--secondary);font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.clear-filters{width:100%;border-style:dashed;border-color:var(--brass-dim);color:var(--brass);background:transparent}
+.clear-filters:hover{border-color:var(--brass);color:var(--brass)}
+.session-results{margin-top:var(--space-2)}
+.session-row{display:block;width:100%;text-align:left;margin-bottom:var(--space-2);padding:var(--space-3);background:var(--panel-2);border:1px solid var(--line2);border-left:3px solid var(--line);transition:background .18s ease,border-color .18s ease,transform .18s ease,box-shadow .18s ease}
+.session-row:hover{border-color:var(--teal-dim);transform:translateX(3px);box-shadow:var(--shadow-sm)}
 .session-row .sid{font-family:var(--mono);font-size:var(--text-sm);color:var(--text);display:block;word-break:break-all}
 .session-row .smeta{font-size:var(--text-xs);color:var(--secondary);display:block;margin-top:var(--space-1)}
-.session-row[aria-pressed="true"]{border-left-color:var(--teal);background:var(--elev)}
+.session-row[aria-pressed="true"]{border-left-color:var(--teal);background:linear-gradient(90deg,rgba(53,196,181,.14),var(--elev))}
 .session-row[aria-pressed="true"] .sid{color:var(--teal)}
-#timeline{display:flex;gap:var(--space-2);flex-wrap:wrap;margin:var(--space-2) 0}
-.iter-btn{display:flex;flex-direction:column;align-items:flex-start;gap:var(--space-1);min-width:104px;padding:var(--space-2) var(--space-3)}
+#timeline{display:flex;gap:var(--space-2);flex-wrap:wrap;margin:var(--space-3) 0}
+.iter-btn{display:flex;flex-direction:column;align-items:flex-start;gap:var(--space-1);min-width:112px;padding:var(--space-2) var(--space-3);transition:background .18s ease,border-color .18s ease,color .18s ease,transform .18s ease,box-shadow .18s ease}
+.iter-btn:hover{transform:translateY(-1px)}
 .iter-btn .it-num{font-weight:700;font-size:var(--text-sm)}
 .iter-btn .it-sub{font-size:var(--text-xs);color:var(--secondary)}
-.iter-btn[aria-pressed="true"]{border-color:var(--teal);background:var(--elev)}
+.iter-btn[aria-pressed="true"]{border-color:var(--teal);background:linear-gradient(180deg,var(--elev),var(--panel-2));box-shadow:inset 0 0 0 1px rgba(53,196,181,.3)}
 .iter-btn[aria-pressed="true"] .it-num{color:var(--teal)}
-.meta-chips{display:flex;flex-wrap:wrap;gap:var(--space-2);margin:var(--space-2) 0 var(--space-3)}
-.objective-box{background:var(--bg2);border:1px solid var(--line2);border-radius:var(--radius-sm);padding:var(--space-2) var(--space-3);margin:var(--space-2) 0;word-break:break-word}
-.summary{font-size:var(--text-lg);line-height:1.45;margin:var(--space-2) 0}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:var(--space-2);margin:var(--space-2) 0}
-.field{background:var(--bg2);border:1px solid var(--line2);border-radius:var(--radius-sm);padding:var(--space-2) var(--space-3);min-width:0}
-.field .k{color:var(--secondary);font-size:var(--text-xs);text-transform:uppercase;letter-spacing:.04em;word-break:break-word}
+.meta-chips{display:flex;flex-wrap:wrap;gap:var(--space-2);margin:var(--space-3) 0}
+.objective-box{background:var(--bg2);border:1px solid var(--line2);border-left:3px solid var(--teal);border-radius:var(--radius-sm);padding:var(--space-3);margin:var(--space-3) 0;word-break:break-word}
+.summary{font-size:var(--text-lg);line-height:1.5;margin:var(--space-3) 0;padding-left:var(--space-3);border-left:3px solid var(--brass)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:var(--space-3);margin:var(--space-3) 0}
+.field{background:var(--bg2);border:1px solid var(--line2);border-radius:var(--radius-sm);padding:var(--space-3);min-width:0;transition:border-color .18s ease}
+.field:hover{border-color:var(--line)}
+.field .k{color:var(--secondary);font-size:var(--text-xs);text-transform:uppercase;letter-spacing:.05em;word-break:break-word}
 .field .v{font-size:var(--text-md);word-break:break-word;margin-top:var(--space-1)}
 .field .u{font-size:var(--text-xs);color:var(--faint)}
-.artifact-viewer{background:var(--panel);border:1px solid var(--line2);border-radius:var(--radius);padding:var(--space-4);margin-bottom:var(--space-4)}
+.artifact-viewer{background:var(--panel);border:1px solid var(--line2);border-radius:var(--radius);padding:var(--space-5);margin-bottom:var(--space-4)}
 .artifact-viewer audio{width:100%;min-height:40px}
 .artifact-viewer img{max-width:100%;height:auto;display:block;border-radius:var(--radius-sm)}
-.artifact-viewer .frame-strip{display:flex;gap:var(--space-2);overflow-x:auto;padding-bottom:var(--space-2)}
-.artifact-viewer .frame-strip img{flex:none;width:120px;cursor:pointer;border:2px solid transparent}
+.artifact-viewer .frame-strip{display:flex;gap:var(--space-2);flex-wrap:wrap;padding-bottom:var(--space-2)}
+.artifact-viewer .frame-strip img{flex:none;width:120px;cursor:pointer;border:2px solid transparent;transition:border-color .18s ease,transform .18s ease}
+.artifact-viewer .frame-strip img:hover{transform:translateY(-2px)}
 .artifact-viewer .frame-strip img.sel{border-color:var(--teal)}
-.poem{font-family:Georgia,"Times New Roman",serif;font-size:var(--text-lg);line-height:1.6;white-space:pre-wrap}
-.story-text{white-space:pre-wrap;line-height:1.65}
-.code-src{white-space:pre-wrap;word-break:break-word;background:var(--bg);border:1px solid var(--line2);border-radius:var(--radius-sm);padding:var(--space-3);font-family:var(--mono);font-size:var(--text-sm);max-height:380px;overflow:auto;margin:var(--space-2) 0}
+.poem{font-family:Georgia,"Times New Roman",serif;font-size:var(--text-lg);line-height:1.65;white-space:pre-wrap}
+.story-text{white-space:pre-wrap;line-height:1.7}
+.code-src{white-space:pre-wrap;word-break:break-word;background:var(--bg);border:1px solid var(--line2);border-radius:var(--radius-sm);padding:var(--space-3);font-family:var(--mono);font-size:var(--text-sm);margin:var(--space-2) 0}
 .diff-add{background:rgba(53,196,181,.14);border-left:3px solid var(--teal);padding:var(--space-1) var(--space-2)}
 .diff-del{background:rgba(224,122,107,.14);border-left:3px solid var(--red);padding:var(--space-1) var(--space-2);text-decoration:line-through}
 .chart-canvas{width:100%;height:180px;display:block;background:var(--bg)}
-details{background:var(--panel);border:1px solid var(--line2);border-radius:var(--radius);margin-bottom:var(--space-4);overflow:hidden}
-details>summary{padding:var(--space-3) var(--space-4);cursor:pointer;font-weight:600;font-size:var(--text-sm);list-style:none}
+details{background:var(--panel);border:1px solid var(--line2);border-radius:var(--radius);margin-bottom:var(--space-4);overflow:hidden;transition:border-color .2s ease}
+details:hover{border-color:var(--line)}
+details>summary{padding:var(--space-3) var(--space-4);cursor:pointer;font-weight:600;font-size:var(--text-sm);list-style:none;transition:background .18s ease,color .18s ease}
 details>summary::-webkit-details-marker{display:none}
 details>summary::before{content:"\25B8  ";color:var(--teal)}
 details[open]>summary::before{content:"\25BE  "}
-details>summary:hover{background:var(--elev)}
+details>summary:hover{background:var(--elev);color:var(--teal)}
 details .detail-body{padding:0 var(--space-4) var(--space-4);border-top:1px solid var(--line2)}
+details[open] .detail-body{animation:detail-in .28s ease both}
+@keyframes detail-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+@keyframes panel-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.visual-panel-inner{animation:panel-in .35s ease both}
 .secondary-details{background:var(--bg2)}
 .secondary-list{margin:var(--space-2) 0}
 .secondary-list>div{display:flex;gap:var(--space-3);padding:var(--space-1) 0;border-bottom:1px solid var(--line2)}
 .secondary-list dt{color:var(--secondary);font-size:var(--text-sm);min-width:160px}
 .secondary-list dd{margin:0;font-size:var(--text-sm);word-break:break-word}
-.fault-entry{border:1px solid var(--line2);border-left:3px solid var(--brass);border-radius:var(--radius-sm);padding:var(--space-2) var(--space-3);margin-bottom:var(--space-2);background:var(--bg2)}
+.fault-entry{border:1px solid var(--line2);border-left:3px solid var(--brass);border-radius:var(--radius-sm);padding:var(--space-3);margin-bottom:var(--space-2);background:var(--bg2);transition:border-color .18s ease,transform .18s ease}
+.fault-entry:hover{border-color:var(--brass-dim);transform:translateX(2px)}
 .fault-entry .where{font-family:var(--mono);font-size:var(--text-xs);color:var(--secondary)}
-.revision-entry{border:1px solid var(--line2);border-radius:var(--radius-sm);padding:var(--space-2) var(--space-3);margin-bottom:var(--space-2);background:var(--bg2)}
+.revision-entry{border:1px solid var(--line2);border-radius:var(--radius-sm);padding:var(--space-3);margin-bottom:var(--space-2);background:var(--bg2)}
 .revision-entry.applied{border-left:3px solid var(--teal)}
 .revision-entry.rejected{border-left:3px solid var(--red)}
 .revision-entry .op{font-family:var(--mono);font-size:var(--text-sm);color:var(--teal)}
 .revision-entry .target{font-size:var(--text-xs);color:var(--secondary)}
-.inv-entry{border:1px solid var(--line2);border-radius:var(--radius-sm);padding:var(--space-2) var(--space-3);margin-bottom:var(--space-2);background:var(--bg2)}
+.inv-entry{border:1px solid var(--line2);border-radius:var(--radius-sm);padding:var(--space-3);margin-bottom:var(--space-2);background:var(--bg2)}
 .inv-entry.held{border-left:3px solid var(--teal)}
 .inv-entry.broken{border-left:3px solid var(--brass)}
 .inv-entry .iid{font-family:var(--mono);font-size:var(--text-sm)}
 .judgment-card{border-left:3px solid var(--teal)}
-.judgment-card .judgment-entry{border:1px solid var(--line2);border-left:3px solid var(--brass);border-radius:var(--radius-sm);padding:var(--space-2) var(--space-3);margin-bottom:var(--space-2);background:var(--bg2)}
+.judgment-card .judgment-entry{border:1px solid var(--line2);border-left:3px solid var(--brass);border-radius:var(--radius-sm);padding:var(--space-3);margin-bottom:var(--space-2);background:var(--bg2)}
 .ground-truth-box{border:2px dashed var(--brass);border-radius:var(--radius);padding:var(--space-3);margin:var(--space-3) 0;background:var(--panel)}
-.event-timeline-wrap{background:var(--panel);border:1px solid var(--line2);border-radius:var(--radius);padding:var(--space-4)}
+.event-timeline-wrap{background:var(--bg2);border:1px solid var(--line2);border-radius:var(--radius-sm);padding:var(--space-4)}
 .event-timeline-status{display:flex;gap:var(--space-2);flex-wrap:wrap;align-items:center;margin-bottom:var(--space-3)}
-.event-timeline-progress{height:6px;border-radius:999px;background:var(--bg2);overflow:hidden;margin-bottom:var(--space-4)}
+.event-timeline-progress{height:6px;border-radius:999px;background:var(--panel);overflow:hidden;margin-bottom:var(--space-4)}
 .event-timeline-progress span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--teal),var(--brass));border-radius:999px;transition:width .35s ease}
 .event-timeline{list-style:none;margin:0;padding:0;position:relative}
 .event-timeline::before{content:"";position:absolute;left:13px;top:var(--space-3);bottom:var(--space-3);width:2px;background:linear-gradient(var(--line),var(--teal));opacity:.55;border-radius:2px}
 .event-step{position:relative;display:flex;gap:var(--space-3);align-items:flex-start;padding:var(--space-2) var(--space-3) var(--space-2) var(--space-6);border:1px solid transparent;border-radius:var(--radius-sm);margin-bottom:var(--space-1);transition:background .25s ease,border-color .25s ease,opacity .25s ease}
-.event-step .event-dot{position:absolute;left:var(--space-2);top:var(--space-3);width:14px;height:14px;border-radius:50%;background:var(--faint);border:2px solid var(--bg);flex:none}
+.event-step .event-dot{position:absolute;left:var(--space-2);top:var(--space-3);width:14px;height:14px;border-radius:50%;background:var(--faint);border:2px solid var(--bg);flex:none;transition:background .25s ease,box-shadow .25s ease}
 .event-step[data-mode="selected"] .event-dot,.event-step[data-mode="submitted"] .event-dot,.event-step[data-mode="evidence"] .event-dot{background:var(--teal)}
 .event-step[data-mode="perceiving"] .event-dot,.event-step[data-mode="applied"] .event-dot{background:var(--teal)}
 .event-step[data-mode="decision"] .event-dot{background:var(--brass)}
@@ -144,16 +183,17 @@ details .detail-body{padding:0 var(--space-4) var(--space-4);border-top:1px soli
 .event-step.is-upcoming{opacity:.58}
 .event-timeline-controls{display:flex;gap:var(--space-2);flex-wrap:wrap;margin-top:var(--space-3)}
 .event-timeline-controls button{font-size:var(--text-sm)}
-body.demo #app{grid-template-columns:1fr;grid-template-areas:"head" "center"}
 body.demo #left,body.demo #right{display:none}
-body.demo .artifact-viewer{padding:var(--space-5)}
-.demo-banner{display:none;background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:var(--radius);padding:var(--space-4);margin-bottom:var(--space-4)}
-body.demo .demo-banner{display:block}
+body.demo .artifact-viewer{padding:var(--space-6)}
+.demo-banner{display:none;background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:var(--radius);padding:var(--space-5);margin-bottom:var(--space-4);box-shadow:var(--shadow)}
+body.demo .demo-banner{display:block;animation:panel-in .35s ease both}
 .demo-steps{display:flex;flex-wrap:wrap;gap:var(--space-2);align-items:center;margin:var(--space-3) 0}
-.demo-steps .step{border:1px solid var(--line);border-radius:999px;padding:var(--space-1) var(--space-3);font-size:var(--text-sm);background:var(--bg2)}
+.demo-steps .step{border:1px solid var(--line);border-radius:999px;padding:var(--space-1) var(--space-3);font-size:var(--text-sm);background:var(--bg2);transition:border-color .18s ease,color .18s ease}
+.demo-steps .step:hover{border-color:var(--teal);color:var(--teal)}
 .demo-steps .arrow{color:var(--teal)}
 .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)}
-.compare-grid>div{min-width:0;border:1px solid var(--line2);border-radius:var(--radius-sm);padding:var(--space-3);background:var(--bg2)}
+.compare-grid>div{min-width:0;border:1px solid var(--line2);border-radius:var(--radius-sm);padding:var(--space-3);background:var(--bg2);transition:border-color .18s ease}
+.compare-grid>div:hover{border-color:var(--line)}
 .compare-grid audio{width:100%}
 .compare-grid img{max-width:100%}
 .visual-panel svg{width:100%;height:auto;display:block;background:var(--bg2);border:1px solid var(--line2);border-radius:var(--radius-sm)}
@@ -165,10 +205,11 @@ body.demo .demo-banner{display:block}
 .visual-panel .panel-table{width:100%;border-collapse:collapse;font-size:var(--text-sm)}
 .visual-panel .bar-row{display:grid;grid-template-columns:170px 1fr 90px;gap:var(--space-3);align-items:center;margin-bottom:var(--space-2)}
 .visual-panel .bar-track{height:14px;background:var(--bg2);border:1px solid var(--line2);border-radius:999px;overflow:hidden;display:flex}
-.visual-panel .bar-fill-written{background:var(--teal)}
-.visual-panel .bar-fill-delivered{background:var(--brass)}
-.visual-panel .poetry-stanza{margin-bottom:var(--space-3)}
-.visual-panel .poetry-line{display:grid;grid-template-columns:64px 1fr 120px 120px;gap:var(--space-3);padding:var(--space-2) var(--space-3);border:1px solid var(--line2);border-radius:var(--radius-sm);margin-bottom:var(--space-1);background:var(--bg2)}
+.visual-panel .bar-fill-written{background:linear-gradient(90deg,var(--teal-strong),var(--teal));transition:width .45s ease}
+.visual-panel .bar-fill-delivered{background:linear-gradient(90deg,var(--brass-strong),var(--brass));transition:width .45s ease}
+.visual-panel .poetry-stanza{margin-bottom:var(--space-4)}
+.visual-panel .poetry-line{display:grid;grid-template-columns:64px 1fr 120px 120px;gap:var(--space-3);padding:var(--space-3);border:1px solid var(--line2);border-radius:var(--radius-sm);margin-bottom:var(--space-1);background:var(--bg2);transition:border-color .18s ease}
+.visual-panel .poetry-line:hover{border-color:var(--line)}
 .visual-panel .poetry-line.marked{border-left:3px solid var(--brass)}
 .visual-panel .check-pass{color:var(--teal)}.visual-panel .check-fail{color:var(--red)}.visual-panel .check-error{color:var(--red)}.visual-panel .check-timeout{color:var(--brass)}
 .ruler-written{stroke:var(--teal);stroke-width:3}
@@ -176,42 +217,135 @@ body.demo .demo-banner{display:block}
 .ruler-axis{stroke:var(--line);stroke-width:1}
 .svg-label{fill:var(--secondary);font-size:11px;font-family:var(--sans)}
 .svg-id{fill:var(--text);font-size:10px;font-family:var(--mono)}
-@media(max-width:1200px){
-  #app{grid-template-columns:260px minmax(0,1fr);grid-template-areas:"head head" "left center" "right center"}
-}
+.music-instruments{display:grid;gap:var(--space-4)}
+.music-instrument{background:var(--bg2);border:1px solid var(--line2);border-radius:var(--radius-sm);padding:var(--space-4);transition:border-color .18s ease}
+.music-instrument:hover{border-color:var(--line)}
+.music-instrument h4{margin-bottom:var(--space-3)}
+.music-instrument-canvas{width:100%;height:220px;display:block;background:#141518;border:1px solid var(--line2);border-radius:var(--radius-sm);transition:opacity .25s ease,transform .25s ease}
+.music-instrument-canvas.is-switching{opacity:.35;transform:scale(.995)}
+.music-osc-row{display:flex;gap:var(--space-3);align-items:flex-start}
+.music-osc-row .music-instrument-canvas{flex:1 1 auto;min-width:0}
+.music-osc-side{flex:0 0 150px;display:grid;gap:var(--space-2)}
+.expanded-modal{position:fixed;inset:0;background:rgba(10,14,20,.96);z-index:50;padding:var(--space-5);overflow-y:auto;animation:panel-in .25s ease both}
+.expanded-modal-panel{max-width:1100px;margin:0 auto;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:var(--space-4);box-shadow:var(--shadow)}
+.expanded-modal-close{margin-bottom:var(--space-3)}
+.expanded-modal-body img{max-width:100%}
+.expanded-modal-body audio{width:100%}
+body.modal-open{overflow:hidden}
+@media(max-width:900px){.music-osc-row{flex-direction:column}.music-osc-side{flex:none;width:100%}.music-instrument-canvas{height:180px}}
 @media(max-width:900px){
-  #app{grid-template-columns:1fr;grid-template-areas:"head" "left" "center" "right";height:auto;gap:var(--space-3);padding:var(--space-3)}
-  #left,#center,#right{overflow-y:visible}
+  #app{padding:var(--space-4)}
   header{flex-direction:column;align-items:flex-start}
+  .header-actions{width:100%}
   .compare-grid{grid-template-columns:1fr}
   .grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
   .visual-panel .bar-row{grid-template-columns:1fr;gap:var(--space-1)}
   .visual-panel .poetry-line{grid-template-columns:1fr;gap:var(--space-1)}
+  .card{padding:var(--space-4)}
+}
+@media(max-width:640px){
+  #app{padding:var(--space-3);gap:var(--space-3)}
+  .brand-icon{width:36px;height:36px;border-radius:10px}
+  .brand .name{font-size:var(--text-lg)}
+  .brand .tag{font-size:var(--text-xs)}
+  .session-title{font-size:var(--text-xl)}
+  .iter-btn{min-width:0;flex:1 1 140px}
+  .session-tools{padding:var(--space-3)}
+  .expanded-modal{padding:var(--space-3)}
+  .secondary-list dt{min-width:0}
+  .secondary-list>div{flex-direction:column;gap:var(--space-1)}
 }
 @media(prefers-reduced-motion:reduce){
   *{animation:none!important;transition:none!important;scroll-behavior:auto!important}
 }
+
+
+.current-view-name{font-weight:700;color:var(--teal);font-size:var(--text-sm);letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+.nav-backdrop{position:fixed;inset:0;background:rgba(10,14,20,.62);z-index:55}
+.nav-backdrop[hidden]{display:none}
+.nav-drawer{position:fixed;top:0;right:0;height:100vh;width:320px;max-width:88vw;background:linear-gradient(180deg,var(--panel),var(--panel-2));border-left:1px solid var(--line);box-shadow:var(--shadow);z-index:60;transform:translateX(105%);visibility:hidden;transition:transform .25s ease,visibility .25s ease;overflow-y:auto;padding:var(--space-5);display:flex;flex-direction:column;gap:var(--space-2)}
+.nav-drawer.open{transform:translateX(0);visibility:visible}
+.nav-drawer-head{display:flex;justify-content:space-between;align-items:center;gap:var(--space-3);margin-bottom:var(--space-4)}
+.nav-close{flex:none}
+.nav-item{text-align:left;padding:var(--space-3) var(--space-4);font-weight:600;width:100%}
+.nav-item[aria-current="page"]{border-color:var(--teal);color:var(--teal);background:linear-gradient(90deg,rgba(53,196,181,.14),var(--elev))}
+.view{animation:panel-in .3s ease both}
+.view[hidden]{display:none}
+#views{display:block;margin-top:var(--space-5)}
+.dash-hero{text-align:left}
+.dash-sentence{font-size:var(--text-xl);line-height:1.5;margin:var(--space-4) 0 0;max-width:760px}
+.app-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:var(--space-4);margin:var(--space-5) 0}
+.app-card{background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line2);border-top:3px solid var(--teal);border-radius:var(--radius);padding:var(--space-5);box-shadow:var(--shadow);transition:border-color .2s ease,transform .2s ease}
+.app-card:nth-child(even){border-top-color:var(--brass)}
+.app-card:hover{border-color:var(--teal);transform:translateY(-2px)}
+.app-card h3{font-size:var(--text-lg);margin-bottom:var(--space-2)}
+.app-card p{color:var(--secondary);margin:0;line-height:1.55}
+.recent-row{display:block;width:100%;text-align:left;margin-bottom:var(--space-2);padding:var(--space-3);background:var(--panel-2);border:1px solid var(--line2);border-left:3px solid var(--brass)}
+.recent-row:hover{border-color:var(--teal-dim);transform:translateX(3px)}
+.recent-row .sid{font-family:var(--mono);font-size:var(--text-sm);display:block;word-break:break-all}
+.recent-row .smeta{font-size:var(--text-xs);color:var(--secondary);display:block;margin-top:var(--space-1)}
+.dash-next{font-size:var(--text-md);color:var(--secondary);margin:var(--space-4) 0}
+.settings-form{max-width:640px;display:flex;flex-direction:column;gap:var(--space-5)}
+.settings-field{display:flex;flex-direction:column;gap:var(--space-2);background:var(--bg2);border:1px solid var(--line2);border-radius:var(--radius-sm);padding:var(--space-4)}
+.settings-field label{font-weight:700}
+.settings-field .small{margin:0}
+.settings-status{color:var(--teal);font-weight:600}
+.settings-field .remove-btn{align-self:flex-start}
+.settings-note{border-left:3px solid var(--brass);padding-left:var(--space-3)}
+@media(max-width:640px){.app-grid{grid-template-columns:1fr}.nav-drawer{width:280px}}
+
 </style>
 </head>
 <body>
+<a class="skip-link" href="#view-dashboard">Skip to dashboard</a>
 <div id="app">
-  <header>
+<header>
     <div class="brand">
-      <span class="name">Sensoryne</span>
-      <span class="tag">perceptual intelligence interface</span>
+      <img class="brand-icon" src="sensoryne-icon.webp" alt="Sensoryne icon" width="44" height="44">
+      <span class="brand-text"><span class="name">Sensoryne</span><span class="tag">Independent Perceptual Evaluation and Improvement Platform</span></span>
     </div>
     <div class="header-actions">
+      <span id="current-view-name" class="current-view-name">Dashboard</span>
       <span id="selected-session" class="small">No session selected</span>
-      <button id="sidebar-toggle" aria-pressed="false" aria-label="Toggle session explorer">☰ Sessions</button>
+      <button id="nav-toggle" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="nav-drawer" aria-label="Open navigation menu">☰ Menu</button>
       <button id="demo-toggle" aria-pressed="false">▶ Demonstration mode</button>
     </div>
   </header>
-
-  <aside id="left" aria-label="Session explorer">
+  <div class="nav-backdrop" id="nav-backdrop" hidden></div>
+  <nav class="nav-drawer" id="nav-drawer" aria-label="Main navigation" aria-hidden="true">
+    <div class="nav-drawer-head"><span class="eyebrow">Sensoryne</span><button id="nav-close" type="button" class="nav-close" aria-label="Close navigation menu">✕ Close</button></div>
+    <button type="button" class="nav-item" data-view="dashboard" aria-current="page">Dashboard</button>
+    <button type="button" class="nav-item" data-view="sessions">Sessions</button>
+    <button type="button" class="nav-item" data-view="settings">Settings</button>
+  </nav>
+  <main id="views">
+  <section id="view-dashboard" class="view" aria-label="Dashboard">
+    <div class="card dash-hero">
+      <h1>Sensoryne</h1>
+      <p class="dash-sentence">Sensoryne perceives a model's finished work, judges it against the work as written, and names what is wrong.</p>
+    </div>
+    <div class="app-grid" aria-label="Applications">
+      <article class="app-card"><h3>Music &amp; Sound</h3><p>Judges a rendered piece against the written score, and sounds against their written events.</p></article>
+      <article class="app-card"><h3>Poetry</h3><p>Judges a poem against its declared form.</p></article>
+      <article class="app-card"><h3>Story</h3><p>Judges a story against its outline.</p></article>
+      <article class="app-card"><h3>Drawing</h3><p>Judges a drawing against the shapes it declares.</p></article>
+      <article class="app-card"><h3>Code</h3><p>Judges code against the checks it states.</p></article>
+      <article class="app-card"><h3>Typography</h3><p>Judges a layout against its declared blocks.</p></article>
+      <article class="app-card"><h3>Animation</h3><p>Judges an animation against its keyframes and timing.</p></article>
+      <article class="app-card"><h3>Argument</h3><p>Judges an argument against its claims and sources.</p></article>
+    </div>
+    <section class="card" aria-label="Recent sessions">
+      <h2>Recent sessions</h2>
+      <div id="recent-sessions"><p class="missing">No sessions yet.</p></div>
+    </section>
+    <p class="dash-next">Open Sessions from the menu to look through recorded work, and Settings to connect the models.</p>
+  </section>
+  <section id="view-sessions" class="view" hidden aria-label="Sessions">
+<aside id="left" aria-label="Session explorer">
     <h2>Session explorer</h2>
     <div class="session-tools">
       <label for="search">Search sessions</label>
-      <input id="search" type="search" placeholder="Search by ID, artifact, condition…" aria-label="Search sessions">
+      <input id="search" type="search" placeholder="Search session ID or application..." aria-label="Search sessions">
       <label for="filter-app">Filter by application</label>
       <select id="filter-app" aria-label="Filter by application"><option value="">All applications</option></select>
       <label for="filter-cond">Filter by condition</label>
@@ -229,12 +363,13 @@ body.demo .demo-banner{display:block}
         <option value="first-event">First event time</option>
         <option value="last-event">Last event time</option>
       </select>
+      <button id="clear-filters" type="button" class="clear-filters">Clear search and filters</button>
     </div>
-    <p class="small"><span id="session-count">0</span> session(s) listed. Nothing shown is scored or judged.</p>
+    <p class="small session-results" aria-live="polite"><span id="session-count">0</span> session(s) listed. Nothing shown is scored; the findings shown are Sensoryne's judgment of the delivery against the work as written.</p>
     <div id="session-list" role="listbox" aria-label="Sessions"><p class="missing">Loading sessions…</p></div>
   </aside>
 
-  <main id="center" aria-label="Artifact and evidence workspace">
+<section id="center" aria-label="Artifact and evidence workspace">
     <div class="demo-banner" role="note">
       <strong>Demonstration mode.</strong> The model creates. Sensoryne perceives independently. The model receives evidence and decides whether to revise. Sensoryne records the process.
       <div class="demo-steps" aria-label="Perception loop">
@@ -252,10 +387,10 @@ body.demo .demo-banner{display:block}
     </div>
 
     <section class="card" aria-label="Session header">
-      <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start">
+      <div class="session-header-row">
         <div style="min-width:0">
           <div class="eyebrow">Session</div>
-          <h1 id="hdr-session" style="font-size:20px;word-break:break-all">No session selected</h1>
+          <h1 id="hdr-session" class="session-title">No session selected</h1>
         </div>
         <div id="hdr-status"></div>
       </div>
@@ -275,11 +410,11 @@ body.demo .demo-banner{display:block}
           <button id="timeline-replay">Replay recorded events</button>
         </div>
       </div>
-      <p class="small" id="event-timeline-caption">A two-dimensional timeline of recorded session events only. Every state it shows is also listed as text in the activity timeline below.</p>
+      <p class="small" id="event-timeline-caption">Timeline of the session's recorded events.</p>
     </section>
 
     <section class="card" aria-label="Iteration timeline">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+      <div class="section-header-row">
         <h2>Iteration timeline</h2>
         <div class="btn-row" style="margin:0">
           <button id="compare-toggle" aria-pressed="false">Compare two versions</button>
@@ -289,8 +424,8 @@ body.demo .demo-banner{display:block}
       <p class="small" id="timeline-help">Use ← → arrow keys on the timeline to move between iterations. Enter selects.</p>
       <div id="compare-panel" hidden>
         <div class="btn-row">
-          <label class="small" for="compare-a">Version A</label><select id="compare-a" style="width:auto"></select>
-          <label class="small" for="compare-b">Version B</label><select id="compare-b" style="width:auto"></select>
+          <label class="small" for="compare-a">Version A</label><select id="compare-a" class="select-auto"></select>
+          <label class="small" for="compare-b">Version B</label><select id="compare-b" class="select-auto"></select>
           <span id="compare-note" class="small"></span>
         </div>
         <div id="compare-out"></div>
@@ -298,14 +433,14 @@ body.demo .demo-banner{display:block}
     </section>
 
     <section class="card" aria-label="Artifact viewer">
-      <h2>Artifact — rendered output</h2>
+      <h2>Artifact: rendered output</h2>
       <div id="player-wrap"><p class="missing">No render available.</p></div>
       <div class="btn-row" id="artifact-tools"></div>
       <div id="artifact-extra"></div>
     </section>
 
     <section class="card" aria-label="Perception summary">
-      <h2>Perception summary <span class="small">(instrument output — as recorded)</span></h2>
+      <h2>Perception summary <span class="small">(instrument output, as recorded)</span></h2>
       <div class="summary" id="summary">No perception in this condition</div>
       <details class="secondary-details"><summary>Evidence provenance (secondary)</summary><div class="detail-body"><div id="provenance" class="small"></div></div></details>
     </section>
@@ -368,20 +503,20 @@ body.demo .demo-banner{display:block}
       <h2>Session activity (recorded events)</h2>
       <div id="activity"></div>
     </section>
-  </main>
+  </section>
 
-  <aside id="right" aria-label="Model findings and revision history">
+<aside id="right" aria-label="Model findings and revision history">
     <h2>Model findings &amp; revisions</h2>
     <div id="findings"></div>
     <section class="card" aria-label="Model assessment">
-      <h2>Model assessment <span class="small">(model interpretation — separate from instrument evidence)</span></h2>
+      <h2>Model assessment <span class="small">(model interpretation, separate from instrument evidence)</span></h2>
       <div id="assessment"><p class="missing">No decision recorded for this iteration.</p></div>
     </section>
     <section class="card" aria-label="Session termination">
       <h2>Session termination</h2>
       <div id="termination"><p class="missing">No termination recorded.</p></div>
     </section>
-    <div style="margin-top:12px">
+    <div class="stack-top">
       <button id="ground-truth-toggle" aria-pressed="false">Show planted ground truth</button>
       <div id="ground-truth-box" hidden>
         <div class="ground-truth-box">
@@ -392,6 +527,31 @@ body.demo .demo-banner{display:block}
       </div>
     </div>
   </aside>
+  </section>
+  <section id="view-settings" class="view" hidden aria-label="Settings">
+    <section class="card settings-card" aria-label="Settings">
+      <h2>Settings</h2>
+      <div class="settings-form">
+        <div class="settings-field">
+          <label for="worker-key">Working model API key</label>
+          <input id="worker-key" type="password" autocomplete="off" aria-describedby="worker-key-help worker-key-status">
+          <p class="small" id="worker-key-help">The model that does the work Sensoryne judges.</p>
+          <p class="small settings-status" id="worker-key-status">No key saved</p>
+          <button id="worker-key-remove" type="button" class="remove-btn">Remove</button>
+        </div>
+        <div class="settings-field">
+          <label for="judge-key">Judge model API key</label>
+          <input id="judge-key" type="password" autocomplete="off" aria-describedby="judge-key-help judge-key-status">
+          <p class="small" id="judge-key-help">A separate model that reads a finished session's record and judges the work itself.</p>
+          <p class="small settings-status" id="judge-key-status">No key saved</p>
+          <button id="judge-key-remove" type="button" class="remove-btn">Remove</button>
+        </div>
+        <div class="btn-row"><button id="settings-save" type="button">Save</button></div>
+        <p class="small settings-note">Keys are stored on this machine, in the settings file beside the sessions folder. They are sent only to the model service when a session runs.</p>
+      </div>
+    </section>
+  </section>
+  </main>
 </div>
 
 <script>
@@ -404,14 +564,14 @@ function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){retur
 function isObj(v){return v!==null&&typeof v==="object"&&!Array.isArray(v);}
 function isNum(v){return typeof v==="number"&&isFinite(v);}
 function fmt(v){
-  if(v==null) return "—";
+  if(v==null) return "-";
   if(typeof v==="boolean") return v?"true":"false";
   if(typeof v==="number"){ if(!isFinite(v)) return String(v); return Number.isInteger(v)?String(v):String(Math.round(v*1e6)/1e6); }
   if(typeof v==="string") return v;
   try{ return JSON.stringify(v); }catch(e){ return String(v); }
 }
 function fmtVal(v){ /* short display for table cells */
-  if(v==null) return "—";
+  if(v==null) return "-";
   if(typeof v==="object"){ var s; try{s=JSON.stringify(v);}catch(e){s=String(v);} return s.length>120?s.slice(0,117)+"…":s; }
   return String(v);
 }
@@ -422,7 +582,7 @@ function copyText(text,noteEl){
   function fallback(){
     var ta=document.createElement("textarea"); ta.value=text; ta.style.position="fixed"; ta.style.opacity="0";
     document.body.appendChild(ta); ta.select();
-    try{ document.execCommand("copy"); done(); }catch(e){ if(noteEl) noteEl.textContent="Copy failed — select the text manually."; }
+    try{ document.execCommand("copy"); done(); }catch(e){ if(noteEl) noteEl.textContent="Copy failed, select the text manually."; }
     document.body.removeChild(ta);
   }
 }
@@ -462,9 +622,10 @@ function inferApp(){
   }
   var art=workArtifact();
   if(isObj(art)){
+    if(Array.isArray(art.claims)) return "argument";
     if(art.kind==="vocal") return "music";
     if(Array.isArray(art.parts)) return "music";
-    if(Array.isArray(art.events)) return "sound_design";
+    if(Array.isArray(art.events)) return "music";
     if(Array.isArray(art.stanzas)) return "poetry";
     if(Array.isArray(art.sections)) return "story";
     if(Array.isArray(art.files)) return "code";
@@ -475,7 +636,7 @@ function inferApp(){
   var ev=evidenceOf(iteration);
   var inst=ev&&ev.instrument?String(ev.instrument):"";
   if(inst==="Sensoryne hearing") return "music";
-  if(inst==="non-pitch audio analyzer") return "sound_design";
+  if(inst==="non-pitch audio analyzer") return "music";
   if(inst==="raster analyzer"){
     var ri=renderInfoFor(iteration)||{};
     return ri.kind==="frames"?"animation":"drawing";
@@ -484,7 +645,7 @@ function inferApp(){
   if(inst==="frame analyzer") return "animation";
   return null;
 }
-var APPS={music:"Music",sound_design:"Sound Design",drawing:"Drawing",animation:"Animation",code:"Code",poetry:"Poetry",story:"Story",typography:"Typography"};
+var APPS={music:"Music & Sound",drawing:"Drawing",animation:"Animation",code:"Code",poetry:"Poetry",story:"Story",typography:"Typography",argument:"Argument"};
 function renderInfoFor(it){
   var r=eventFor("render",it);
   return r?(r.render_info||null):null;
@@ -598,12 +759,11 @@ function renderHeader(){
   el("hdr-session").textContent=current.session_id;
   var start=sessionStart()||{};
   var end=sessionEnd();
-  el("hdr-objective").innerHTML='<span class="eyebrow">Objective</span><div>'+(start.objective!=null?esc(typeof start.objective==="string"?start.objective:JSON.stringify(start.objective)):"—")+'</div>';
+  el("hdr-objective").innerHTML='<span class="eyebrow">Objective</span><div>'+(start.objective!=null?esc(typeof start.objective==="string"?start.objective:JSON.stringify(start.objective)):"-")+'</div>';
   var chips=[];
   chips.push(badge("info","application: "+(APPS[app]||app||"unknown")));
-  chips.push(badge("","condition: "+(current.condition||"—")));
+  chips.push(badge("","condition: "+(current.condition||"-")));
   chips.push(badge("","iteration "+iteration+" of "+its.length));
-  chips.push(badge("","Iteration "+iteration+" of "+its.length));
   var det=[];
   det.push(["API calls (as recorded)",fmt(current.api_calls)]);
   if(current.spend_usd) det.push(["Spend (as recorded)","$"+Number(current.spend_usd).toFixed(4)]);
@@ -611,12 +771,10 @@ function renderHeader(){
   if(current.run_id) det.push(["Run ID (as recorded)",current.run_id]);
   if(sessionTest()!=null) det.push(["Test flag (as recorded)",String(sessionTest())]);
   el("hdr-details").innerHTML=det.length?('<dl class="secondary-list">'+det.map(function(pp){return "<div><dt>"+esc(pp[0])+"</dt><dd>"+esc(String(pp[1]))+"</dd></div>";}).join("")+"</dl>"):'<p class="empty">No secondary session details recorded.</p>';
-  // secondary chips removed from main presentation
-  chips=chips.filter(function(c){return c.indexOf("API calls")<0&&c.indexOf("spend:")<0&&c.indexOf("artifact:")<0&&c.indexOf("run:")<0&&c.indexOf("test:")<0;});
   el("hdr-chips").innerHTML=chips.join("");
   var st="";
   if(end){ st=badge(end.ended_by==="model_complete"?"ok":"warn","session ended: "+end.ended_by+(end.iterations!=null?" after "+end.iterations+" iteration(s)":"")); }
-  else st=badge("warn","session open — no termination recorded");
+  else st=badge("warn","session open, no termination recorded");
   el("hdr-status").innerHTML=st;
   el("selected-session").textContent=current.session_id;
 }
@@ -705,7 +863,7 @@ function renderArtifact(){
     if(kind==="text"){
       fetch(url).then(function(r){return r.text();}).then(function(t){
         if(appType==="poetry"){ w.innerHTML='<div class="poem">'+esc(t)+'</div>'; }
-        else if(appType==="story"){ w.innerHTML='<div class="story-text">'+esc(t)+'</div>'; }
+        else if(appType==="story"||appType==="argument"){ w.innerHTML='<div class="story-text">'+esc(t)+'</div>'; }
         else { w.innerHTML='<div class="code-src">'+esc(t)+'</div>'; }
       }).catch(function(){ w.innerHTML='<p class="missing">Could not load rendered text.</p>'; });
       addTool("Open render in new tab",function(){ window.open(url,"_blank","noopener"); });
@@ -732,18 +890,23 @@ function renderArtifact(){
   }
   // expand viewer
   addTool("Expand viewer",function(){
-    var big=document.createElement("div"); big.style.cssText="position:fixed;inset:0;background:rgba(10,14,20,.96);z-index:50;padding:24px;overflow:auto";
-    var close=document.createElement("button"); close.textContent="Close expanded viewer"; close.style.marginBottom="12px";
-    big.appendChild(close);
-    var body=document.createElement("div"); body.innerHTML=w.innerHTML; big.appendChild(body);
+    var big=document.createElement("div"); big.className="expanded-modal"; big.setAttribute("role","dialog"); big.setAttribute("aria-modal","true"); big.setAttribute("aria-label","Expanded artifact viewer");
+    var panel=document.createElement("div"); panel.className="expanded-modal-panel";
+    var close=document.createElement("button"); close.textContent="Close expanded viewer"; close.className="expanded-modal-close";
+    panel.appendChild(close);
+    var body=document.createElement("div"); body.className="expanded-modal-body"; body.innerHTML=w.innerHTML; panel.appendChild(body);
+    big.appendChild(panel);
     document.body.appendChild(big);
-    close.addEventListener("click",function(){ big.remove(); });
-    big.addEventListener("keydown",function(e){ if(e.key==="Escape") big.remove(); });
+    function closeModal(){ big.remove(); document.body.classList.remove("modal-open"); }
+    close.addEventListener("click",closeModal);
+    big.addEventListener("click",function(e){ if(e.target===big) closeModal(); });
+    big.addEventListener("keydown",function(e){ if(e.key==="Escape") closeModal(); });
+    document.body.classList.add("modal-open");
     close.focus();
   });
   // source access for text-based apps
   var art=workArtifact();
-  if(art&&["poetry","story","code","drawing"].indexOf(appType)>=0){
+  if(art&&["poetry","story","argument","code","drawing"].indexOf(appType)>=0){
     var d=document.createElement("details"); d.innerHTML='<summary>Source as written (submitted artifact)</summary><div class="detail-body"><pre>'+esc(JSON.stringify(art,null,2))+'</pre></div>';
     extra.appendChild(d);
   }
@@ -809,13 +972,13 @@ function renderMeasurements(ev){
   ["instrument","method"].forEach(function(k){
     if(meas[k]!=null){
       var d=document.createElement("div"); d.className="field";
-      d.innerHTML='<div class="k">'+esc(measureLabel(k))+'</div><div class="v" style="font-size:12px">'+esc(String(meas[k]))+'</div>';
+      d.innerHTML='<div class="k">'+esc(measureLabel(k))+'</div><div class="v v-small">'+esc(String(meas[k]))+'</div>';
       m.appendChild(d);
     }
   });
   // music-specific header measurements
   if(appType==="music"){
-    var musicHeader=document.createElement("div"); musicHeader.className="card"; musicHeader.style.background="var(--bg2)";
+    var musicHeader=document.createElement("div"); musicHeader.className="card music-header-card";
     var mh='<h3>Heard reading</h3>';
     var heard=meas.heard||meas.summary;
     if(heard) mh+='<p>'+esc(heard)+'</p>';
@@ -881,7 +1044,7 @@ function renderInvariants(ev){
   else{
     var s=inv.summary||{};
     var h='<p>'+badge(inv.checked.some(function(c){return !c.held;})?"warn":"ok",
-      "invariants: "+fmt(s.total_checked)+" checked · "+fmt(s.held)+" held · "+fmt(s.broken)+" not held (counts only — not an overall score)")+'</p>';
+      "invariants: "+fmt(s.total_checked)+" checked · "+fmt(s.held)+" held · "+fmt(s.broken)+" not held (counts only, not an overall score)")+'</p>';
     inv.checked.forEach(function(c){
       h+='<div class="inv-entry '+(c.held?"held":"broken")+'">'+badge(c.held?"ok":"warn",c.held?"held":"not held")+
         ' <span class="iid">'+esc(c.id||"")+'</span>'+
@@ -895,9 +1058,9 @@ function renderInvariants(ev){
   var coverage=ev&&ev.objective_coverage?ev.objective_coverage:null;
   if(!coverage||!coverage.length){ cov.innerHTML='<p class="missing">No objective coverage recorded.</p>'; }
   else{
-    var present=coverage.filter(function(c){return c.present;}).length;
-    var h2='<p class="small">Detectable objective coverage (presence of detectable items, as recorded): '+present+' of '+coverage.length+' present. This is coverage of detectable items, not the model\u2019s judgment of the work.</p><table><thead><tr><th>Item</th><th>Present (as recorded)</th></tr></thead><tbody>';
-    coverage.forEach(function(c){ h2+='<tr><td>'+esc(c.item||"")+'</td><td>'+(c.present?badge("ok","present"):badge("warn","not present"))+'</td></tr>'; });
+    var present=coverage.filter(function(c){return c.covered;}).length;
+    var h2='<p class="small">Objective coverage as recorded: '+present+' of '+coverage.length+' covered. This is coverage of detectable items, not the model\u2019s judgment of the work.</p><table><thead><tr><th>Item</th><th>Covered (as recorded)</th></tr></thead><tbody>';
+    coverage.forEach(function(c){ h2+='<tr><td>'+esc(c.item||"")+'</td><td>'+(c.covered?badge("ok","covered"):badge("warn","not covered"))+'</td></tr>'; });
     h2+='</tbody></table>';
     cov.innerHTML=h2;
   }
@@ -953,11 +1116,11 @@ function renderStructure(){
 function renderDelta(){
   var box=el("delta"), d=deltaFor(iteration);
   if(!d){ box.innerHTML='<p class="missing">No delta for this iteration (first version, control condition, or no perceived change).</p>'; return; }
-  var h='<p>From <strong>'+esc(d.from_version||"—")+'</strong> to <strong>'+esc(d.to_version||"—")+'</strong></p>';
+  var h='<p>From <strong>'+esc(d.from_version||"-")+'</strong> to <strong>'+esc(d.to_version||"-")+'</strong></p>';
   if(d.changed_measurements&&d.changed_measurements.length){
     h+='<table><thead><tr><th>Measurement path</th><th>Before</th><th>After</th><th>Absolute delta</th><th>Relative delta</th></tr></thead><tbody>';
     d.changed_measurements.forEach(function(e){
-      h+='<tr><td class="mono">'+esc(e.path)+'</td><td>'+esc(fmtVal(e.before))+'</td><td>'+esc(fmtVal(e.after))+'</td><td>'+esc(e.absolute_delta==null?"— (non-numeric)":fmt(e.absolute_delta))+'</td><td>'+esc(e.relative_delta==null?"—":fmt(e.relative_delta))+'</td></tr>';
+      h+='<tr><td class="mono">'+esc(e.path)+'</td><td>'+esc(fmtVal(e.before))+'</td><td>'+esc(fmtVal(e.after))+'</td><td>'+esc(e.absolute_delta==null?"- (non-numeric)":fmt(e.absolute_delta))+'</td><td>'+esc(e.relative_delta==null?"-":fmt(e.relative_delta))+'</td></tr>';
     });
     h+='</tbody></table>';
   } else h+='<p>No changed measurements.</p>';
@@ -974,11 +1137,23 @@ function renderDelta(){
 /* ============ extras: token pack, chladni, segments ============ */
 function segmentsOf(ev){
   if(!ev) return {list:[],pack:null};
-  var tp=ev.token_pack||(ev.measurements&&ev.measurements.token_pack)||null;
-  if(!tp) return {list:[],pack:null};
-  if(Array.isArray(tp)) return {list:tp,pack:null};
-  var list=tp.segments_data||tp.segments||[];
-  return {list:list,pack:tp};
+  var candidates=[];
+  if(ev.full&&ev.full.token_pack) candidates.push(ev.full.token_pack);
+  if(ev.token_pack) candidates.push(ev.token_pack);
+  if(ev.measurements&&ev.measurements.token_pack) candidates.push(ev.measurements.token_pack);
+  if(ev.full&&ev.full.measurements&&ev.full.measurements.token_pack) candidates.push(ev.full.measurements.token_pack);
+  var fallback=null;
+  for(var ci=0;ci<candidates.length;ci++){
+    var tp=candidates[ci];
+    if(Array.isArray(tp)){ if(!fallback) fallback={list:tp,pack:null}; continue; }
+    if(!isObj(tp)) continue;
+    var list=tp.segments_data||tp.segments||[];
+    if(!Array.isArray(list)||!list.length) continue;
+    if(!fallback) fallback={list:list,pack:tp};
+    var hasImage=list.some(function(s){ return isObj(s)&&(Array.isArray(s.chladni_image)||Array.isArray(s.spectrogram_image)||(isObj(s.oscilloscope)&&Array.isArray(s.oscilloscope.waveform_image))||(isObj(s.oscilloscope_block)&&Array.isArray(s.oscilloscope_block.waveform_image))); });
+    if(hasImage) return {list:list,pack:tp};
+  }
+  return fallback||{list:[],pack:null};
 }
 function drawGridImage(canvas,grid,flipY){
   if(!canvas||!Array.isArray(grid)||!grid.length) return;
@@ -1011,7 +1186,7 @@ function renderExtras(ev){
     var rows=meas.chladni_modes.map(function(m){
       return '<tr><td>'+esc(m.mode)+'</td><td>'+esc(fmtVal(m.pair))+'</td><td>'+esc(fmt(m.frequency_hz))+' Hz</td><td>'+esc(fmt(m.weight))+'</td></tr>';
     }).join("");
-    d.innerHTML='<summary>Chladni figure — strongest plate modes (music evidence)</summary><div class="detail-body"><table><thead><tr><th>Mode</th><th>Pair (m, n)</th><th>Frequency</th><th>Weight</th></tr></thead><tbody>'+rows+'</tbody></table><p class="small">Mode weights (78 modes, as recorded) are in the full evidence document.</p></div>';
+    d.innerHTML='<summary>Chladni figure: strongest plate modes (music evidence)</summary><div class="detail-body"><table><thead><tr><th>Mode</th><th>Pair (m, n)</th><th>Frequency</th><th>Weight</th></tr></thead><tbody>'+rows+'</tbody></table><p class="small">Mode weights (78 modes, as recorded) are in the full evidence document.</p></div>';
     box.appendChild(d);
   }
   // Token pack segments
@@ -1026,30 +1201,25 @@ function renderExtras(ev){
     seg.list.forEach(function(s,i){
       var modes=s.chladni_modes?s.chladni_modes.map(function(m){return "mode "+m.mode+" ("+fmt(m.weight)+")";}).join(", "):"";
       var heard=s.heard||s.summary||"";
-      html+='<tr><td>'+esc(s.segment||(i+1))+'</td><td>'+esc(fmt(s.start_time))+'–'+esc(fmt(s.end_time))+' s</td><td>'+esc(s.note||"—")+' / '+esc(fmt(s.pitch_hz))+' Hz</td><td>'+esc(String(heard).slice(0,140))+'</td><td>'+esc(modes)+'</td><td>';
+      html+='<tr><td>'+esc(s.segment||(i+1))+'</td><td>'+esc(fmt(s.start_time))+'–'+esc(fmt(s.end_time))+' s</td><td>'+esc(s.note||"-")+' / '+esc(fmt(s.pitch_hz))+' Hz</td><td>'+esc(String(heard).slice(0,140))+'</td><td>'+esc(modes)+'</td><td>';
       if(Array.isArray(s.chladni_image)) html+='<span class="small">chladni '+s.chladni_image.length+'×'+(s.chladni_image[0]?s.chladni_image[0].length:0)+'</span> ';
       if(Array.isArray(s.spectrogram_image)) html+='<span class="small">spectrogram '+s.spectrogram_image.length+'×'+(s.spectrogram_image[0]?s.spectrogram_image[0].length:0)+'</span> ';
-      if(s.oscilloscope) html+='<span class="small">oscilloscope peak '+esc(fmt(s.oscilloscope.peak_amplitude))+'</span>';
+      if(s.oscilloscope) html+='<span class="small">oscilloscope peak '+esc(fmt(s.oscilloscope.peak))+'</span>';
       html+='</td></tr>';
     });
     html+='</tbody></table>';
     // draw first segment's chladni + spectrogram images
     var s0=seg.list[0];
-    if(s0&&Array.isArray(s0.chladni_image)) html+='<p class="small">Segment 1 Chladni image (from recorded array):</p><canvas id="chladni-canvas" style="max-width:260px;image-rendering:pixelated;border:1px solid var(--line2)"></canvas>';
-    if(s0&&Array.isArray(s0.spectrogram_image)) html+='<p class="small">Segment 1 spectrogram image (from recorded array):</p><canvas id="spec-canvas" style="max-width:260px;image-rendering:pixelated;border:1px solid var(--line2)"></canvas>';
+    html+='<p class="small">Segment instruments are drawn in the visual panel above (oscilloscope waveform, spectrogram field, Chladni figure, harmonic bars, and readings for the selected segment).</p>';
     html+='</div>';
     d2.innerHTML=html; box.appendChild(d2);
-    if(s0&&Array.isArray(s0.chladni_image)) drawGridImage(el("chladni-canvas"),s0.chladni_image,true);
-    if(s0&&Array.isArray(s0.spectrogram_image)) drawGridImage(el("spec-canvas"),s0.spectrogram_image,true);
   }
   // delivered_text pretty presentation (poetry/story already in artifact viewer, but keep here as evidence)
-  if(ev.delivered_text&&appType!=="poetry"&&appType!=="story"){
+  if(ev.delivered_text&&appType!=="poetry"&&appType!=="story"&&appType!=="argument"){
     var d3=document.createElement("details"); d3.innerHTML='<summary>Delivered text (evidence)</summary><div class="detail-body"><pre>'+esc(ev.delivered_text)+'</pre></div>';
     box.appendChild(d3);
   }
-  if(ev.full&&ev.full.delivered_files){
-    // already shown with code artifact; skip duplicate
-  }
+
 }
 /* ============ evidence / findings ============ */
 function renderEvidence(){
@@ -1057,7 +1227,7 @@ function renderEvidence(){
   var s=el("summary"), prov=el("provenance"), f=el("full-evidence");
   if(!ev){
     var skipped=eventFor("perception_skipped",iteration);
-    if(skipped){ s.textContent="Perception skipped in the control condition — the model evaluates the artifact alone and cannot perceive the render."; }
+    if(skipped){ s.textContent="Perception skipped in the control condition, the model evaluates the artifact alone and cannot perceive the render."; }
     else s.textContent="No perception in this condition";
     prov.textContent=""; f.textContent="No perception in this condition."; el("extras").innerHTML="";
     renderMeasurements(null); renderStructure(); renderDelta(); return;
@@ -1069,7 +1239,7 @@ function renderEvidence(){
   var full=ev.full||{};
   if(full.perceived_at) provParts.push("Perceived at (as recorded): "+full.perceived_at);
   if(ev.render_path) provParts.push("Render path (as recorded): "+String(ev.render_path).split(/[\\/]/).pop());
-  if(ev.interpretation!=null) provParts.push("Interpretation: "+fmtVal(ev.interpretation)); else provParts.push("Interpretation: null (instrument reports measurements only)");
+  if(ev.interpretation!=null) provParts.push("Interpretation: "+fmtVal(ev.interpretation)); else provParts.push("Interpretation: null (no separate interpretation is recorded)");
   prov.textContent=provParts.join(" · ");
   f.textContent=JSON.stringify(ev,null,2);
   renderMeasurements(ev); renderStructure(); renderDelta();
@@ -1105,7 +1275,7 @@ function renderFindings(){
     var t=faultText(f);
     h+='<div class="fault-entry"><div>'+esc(t.desc)+'</div>'+(t.where?'<div class="where">where: '+esc(t.where)+'</div>':'')+'</div>';
   });
-  h+="<h3 style='margin-top:12px'>Revision history</h3>";
+  h+="<h3 class='subhead'>Revision history</h3>";
   var revs=current.events.filter(function(e){return (e.event==="revision_applied"||e.event==="revision_rejected");});
   if(revs.length){
     revs.forEach(function(r){
@@ -1125,8 +1295,8 @@ function renderFindings(){
   } else {
     h+='<p class="missing">No revisions recorded.</p>';
   }
-  h+="<h3 style='margin-top:12px'>Completion state (model)</h3>";
-  if(dec.complete===true) h+='<p>'+badge("ok","Complete \u2014 model states the work meets the objective")+'</p>'; else if(dec.complete===false) h+='<p>'+badge("warn","Not complete \u2014 model states further work is needed")+'</p>'; else h+='<details class="secondary-details"><summary>Completion state (secondary)</summary><div class="detail-body"><p class="empty">No completion state recorded for this iteration.</p></div></details>';
+  h+="<h3 class='subhead'>Completion state (model)</h3>";
+  if(dec.complete===true) h+='<p>'+badge("ok","Complete, model states the work meets the objective")+'</p>'; else if(dec.complete===false) h+='<p>'+badge("warn","Not complete, model states further work is needed")+'</p>'; else h+='<details class="secondary-details"><summary>Completion state (secondary)</summary><div class="detail-body"><p class="empty">No completion state recorded for this iteration.</p></div></details>';
   box.innerHTML=h;
   // assessment separate
   var assess=el("assessment");
@@ -1136,12 +1306,12 @@ function renderFindings(){
   var end=sessionEnd();
   var term=el("termination");
   if(end){
-    term.innerHTML='<p>'+badge(end.ended_by==="model_complete"?"ok":"warn",esc(end.ended_by))+'</p><p class="small">Iterations: '+esc(end.iterations!=null?end.iterations:"—")+'</p>'+(end.assessment?'<p class="small">Final assessment: '+esc(end.assessment)+'</p>':'');
-  } else term.innerHTML='<p class="missing">No termination recorded — the session record has no session_end event.</p>';
+    term.innerHTML='<p>'+badge(end.ended_by==="model_complete"?"ok":"warn",esc(end.ended_by))+'</p><p class="small">Iterations: '+esc(end.iterations!=null?end.iterations:"-")+'</p>'+(end.assessment?'<p class="small">Final assessment: '+esc(end.assessment)+'</p>':'');
+  } else term.innerHTML='<p class="missing">No termination recorded, the session record has no session_end event.</p>';
   el("ground-truth").textContent=current.ground_truth?JSON.stringify(current.ground_truth,null,2):"No planted ground truth.";
 }
 /* ============ activity ============ */
-var EVENT_LABEL={session_start:"Session start",tool_call:"Tool call",tool_result:"Tool result",faults_planted:"Faults planted (test only)",render:"Artifact rendered",perception:"Perception (instrument)",perception_skipped:"Perception skipped (control)",decision:"Model decision",revision_applied:"Revision applied",revision_rejected:"Revision rejected",decision_unparseable:"Decision unparseable",session_end:"Session termination"};
+var EVENT_LABEL={session_start:"Session start",tool_call:"Tool call",tool_result:"Tool result",faults_planted:"Faults planted (test only)",render:"Artifact rendered",perception:"Perception (instrument)",perception_skipped:"Perception skipped (control)",decision:"Model decision",revision_applied:"Revision applied",revision_rejected:"Revision rejected",decision_unparseable:"Decision unparseable",session_end:"Session termination",judgment:"Judgment"};
 function renderActivity(){
   var box=el("activity");
   if(!current){ box.innerHTML=""; return; }
@@ -1150,7 +1320,7 @@ function renderActivity(){
     var detail=fmtVal(e.tool||e.version_id||e.ended_by||e.error||"");
     if(e.event==="tool_call") detail=e.tool||"";
     if(e.event==="tool_result") detail=(e.tool||"")+(e.valid!=null?" valid="+e.valid:"")+(e.ended_by?" ended_by="+e.ended_by:"");
-    return '<tr><td>'+(i+1)+'</td><td>'+esc(label)+'</td><td>'+esc(e.iteration!=null?("iteration "+e.iteration):"—")+'</td><td class="mono">'+esc(detail)+'</td><td class="small">'+esc(e.ts||"")+'</td></tr>';
+    return '<tr><td>'+(i+1)+'</td><td>'+esc(label)+'</td><td>'+esc(e.iteration!=null?("iteration "+e.iteration):"-")+'</td><td class="mono">'+esc(detail)+'</td><td class="small">'+esc(e.ts||"")+'</td></tr>';
   }).join("");
   box.innerHTML='<table><thead><tr><th>#</th><th>Recorded event</th><th>Iteration</th><th>Detail</th><th>Timestamp (as recorded)</th></tr></thead><tbody>'+rows+'</tbody></table>';
 }
@@ -1163,11 +1333,6 @@ function fillCompareSelects(){
   a.innerHTML=opts; b.innerHTML=opts;
   if(av) a.value=av; if(bv) b.value=bv;
   if(a.value&&!b.value) b.value=a.value;
-}
-function versionArtifact(it){
-  // For iterations beyond the first, the submitted artifact is the original; revised sources are not in the session record.
-  // We therefore compare renders + evidence, and say so.
-  return null;
 }
 function renderCompare(){
   var a=Number(el("compare-a").value), b=Number(el("compare-b").value);
@@ -1256,7 +1421,7 @@ function panelSound(ev,comp){
   ["realized_events","realized","delivered_events"].forEach(function(k){ if(comp&&Array.isArray(comp[k])) comp[k].forEach(function(e){ if(isObj(e)) addR(firstNum(e,["realized_onset","onset_time","onset","time"]),firstVal(e,["id","event","name"])); else if(isNum(e)) addR(e,null); }); });
   var dur=firstNum(meas,["duration_seconds","file_duration_seconds","duration"]);
   var vals=written.map(function(w){return w.t;}).concat(realized.map(function(w){return w.t;}));
-  if(!written.length&&!realized.length) return panelWrap("sound_design","Sound design — Written and realized onsets (time ruler)",panelEmptyLine("No onset data recorded for this iteration."));
+  if(!written.length&&!realized.length) return panelWrap("music","Music & Sound: Written and realized onsets (time ruler)",panelEmptyLine("No onset data recorded for this iteration."));
   var maxT=maxOf(vals,dur);
   var W=800,H=150,pad=14,innerW=W-pad*2;
   function X(t){ return pad+(t/maxT)*innerW; }
@@ -1268,7 +1433,7 @@ function panelSound(ev,comp){
   svg+='<text x="'+pad+'" y="'+(H-4)+'" class="svg-label">0 s</text><text x="'+(W-pad)+'" y="'+(H-4)+'" class="svg-label" text-anchor="end">'+esc(fmt(maxT))+' s</text></svg>';
   var note='<p class="panel-note">Written (teal) and realized (brass) onsets share one time scale (0 to '+esc(fmt(maxT))+' seconds). An event with no realized mark beneath its written mark was not realized in the recorded measurements.</p>';
   if(comp&&isNum(comp.events_written)) note+='<p class="panel-note">Events written (as recorded): '+esc(fmt(comp.events_written))+' · events realized (as recorded): '+esc(fmt(comp.events_realized))+'.</p>';
-  return panelWrap("sound_design","Sound design — Written and realized onsets (time ruler)",svg+note);
+  return panelWrap("music","Music & Sound: Written and realized onsets (time ruler)",svg+note);
 }
 function panelTypography(ev,comp){
   var meas=(ev&&isObj(ev.measurements))?ev.measurements:{};
@@ -1277,7 +1442,7 @@ function panelTypography(ev,comp){
   var declared=[], realized=[];
   if(Array.isArray(meas.elements)) meas.elements.forEach(function(e){ if(!isObj(e)) return; var b=boxOf(firstVal(e,["realized_box","box","placement"])); if(b) realized.push({b:b,id:firstVal(e,["id","name","text"])}); });
   if(comp&&Array.isArray(comp.findings)) comp.findings.forEach(function(f){ if(!isObj(f)) return; if(isObj(f.written)){ var b=boxOf(firstVal(f.written,["declared_box","box","placement","declared_placement"])); if(b) declared.push({b:b,id:firstVal(f.written,["id","name","text"])}); } if(isObj(f.delivered)){ var b2=boxOf(firstVal(f.delivered,["realized_box","box","placement"])); if(b2) realized.push({b:b2,id:firstVal(f.delivered,["id","name","text"])}); } });
-  if(!declared.length&&!realized.length) return panelWrap("typography","Typography — Declared and realized layout (to scale)",panelEmptyLine("No layout boxes recorded for this iteration."));
+  if(!declared.length&&!realized.length) return panelWrap("typography","Typography: Declared and realized layout (to scale)",panelEmptyLine("No layout boxes recorded for this iteration."));
   var all=declared.concat(realized).map(function(x){return x.b;});
   var maxX=maxOf(all.map(function(b){return b.x+b.w;}),pw||0), maxY=maxOf(all.map(function(b){return b.y+b.h;}),ph||0);
   var W=isNum(pw)&&pw>0?pw:maxX, H=isNum(ph)&&ph>0?ph:maxY;
@@ -1289,7 +1454,7 @@ function panelTypography(ev,comp){
   var note='<p class="panel-note">Declared boxes are teal outlines; realized boxes are brass fills in the same coordinate space ('+esc(fmt(W))+' by '+esc(fmt(H))+' as recorded). Displacement and overflow are visible where the fill sits outside its outline.</p>';
   if(!declared.length) note+='<p class="panel-note">No declared boxes are present in the comparison for this iteration; realized boxes are shown from the measurements.</p>';
   if(!realized.length) note+='<p class="panel-note">No realized boxes are present in the measurements for this iteration; declared boxes are shown from the comparison.</p>';
-  return panelWrap("typography","Typography — Declared and realized layout (to scale)",svg+note);
+  return panelWrap("typography","Typography: Declared and realized layout (to scale)",svg+note);
 }
 function shapeOf(obj){
   if(!isObj(obj)) return null;
@@ -1317,7 +1482,7 @@ function panelDrawing(ev,comp){
   if(comp&&Array.isArray(comp.findings)) comp.findings.forEach(function(f){ if(!isObj(f)) return; var s1=shapeOf(f.written); if(s1) declared.push(s1); var s2=shapeOf(f.delivered); if(s2) delivered.push(s2); });
   ["declared_shapes","written_shapes","shapes_declared"].forEach(function(k){ if(comp&&Array.isArray(comp[k])) comp[k].forEach(function(e){ var s=shapeOf(e); if(s) declared.push(s); }); });
   ["delivered_shapes","realized_shapes","shapes_delivered","shapes_realized"].forEach(function(k){ if(comp&&Array.isArray(comp[k])) comp[k].forEach(function(e){ var s=shapeOf(e); if(s) delivered.push(s); }); });
-  if(!declared.length&&!delivered.length) return panelWrap("drawing","Drawing — Declared and delivered shapes overlaid",panelEmptyLine("No shape geometry recorded in the comparison for this iteration."));
+  if(!declared.length&&!delivered.length) return panelWrap("drawing","Drawing: Declared and delivered shapes overlaid",panelEmptyLine("No shape geometry recorded in the comparison for this iteration."));
   var dims=isObj(meas.dimensions)?meas.dimensions:{};
   var W=firstNum(meas,["width"])||firstNum(dims,["width"])||firstNum(meas.bounding_box,["max_x"]);
   var H=firstNum(meas,["height"])||firstNum(dims,["height"])||firstNum(meas.bounding_box,["max_y"]);
@@ -1328,7 +1493,7 @@ function panelDrawing(ev,comp){
   delivered.forEach(function(s){ svg+=shapeSvg(s,false); });
   declared.forEach(function(s){ svg+=shapeSvg(s,true); });
   svg+='</svg>';
-  return panelWrap("drawing","Drawing — Declared and delivered shapes overlaid",svg+'<p class="panel-note">Declared shapes are teal outlines; delivered shapes are brass fills in the drawing coordinate space ('+esc(fmt(W))+' by '+esc(fmt(H))+' as recorded).</p>');
+  return panelWrap("drawing","Drawing: Declared and delivered shapes overlaid",svg+'<p class="panel-note">Declared shapes are teal outlines; delivered shapes are brass fills in the drawing coordinate space ('+esc(fmt(W))+' by '+esc(fmt(H))+' as recorded).</p>');
 }
 function panelAnimation(ev,comp){
   var meas=(ev&&isObj(ev.measurements))?ev.measurements:{};
@@ -1341,7 +1506,7 @@ function panelAnimation(ev,comp){
   var fc=firstNum(meas,["frame_count"]), fr=firstNum(meas,["frame_rate"]);
   if(dur==null&&fc!=null&&fr!=null&&fr>0) dur=fc/fr;
   var vals=written.map(function(w){return w.t;}).concat(delivered.map(function(w){return w.t;}));
-  if(dur==null&&!vals.length&&fc==null) return panelWrap("animation","Animation — Written keyframes and delivered frames (frame strip)",panelEmptyLine("No keyframe or frame data recorded for this iteration."));
+  if(dur==null&&!vals.length&&fc==null) return panelWrap("animation","Animation: Written keyframes and delivered frames (frame strip)",panelEmptyLine("No keyframe or frame data recorded for this iteration."));
   var maxT=maxOf(vals,dur||0);
   var frames=[];
   if(fc!=null&&fc>0&&fr!=null&&fr>0){ for(var i=0;i<fc;i++) frames.push(i/fr); }
@@ -1357,7 +1522,7 @@ function panelAnimation(ev,comp){
   svg+='<text x="'+pad+'" y="'+(H-4)+'" class="svg-label">0 s</text><text x="'+(W-pad)+'" y="'+(H-4)+'" class="svg-label" text-anchor="end">'+esc(fmt(maxT))+' s</text></svg>';
   var note='<p class="panel-note">Written keyframes (teal) are marked along the written duration; delivered frames and realized keyframe times (brass) are marked beneath on the same scale ('+esc(fmt(maxT))+' seconds'+(fc!=null?'; '+esc(fmt(fc))+' frames as recorded':'')+').</p>';
   if(!written.length) note+='<p class="panel-note">No written keyframe times are present in the comparison for this iteration.</p>';
-  return panelWrap("animation","Animation — Written keyframes and delivered frames (frame strip)",svg+note);
+  return panelWrap("animation","Animation: Written keyframes and delivered frames (frame strip)",svg+note);
 }
 function checkResult(r,findingKind){
   if(r&&r.limit_hit===true) return {label:"Timed out",cls:"check-timeout"};
@@ -1376,18 +1541,18 @@ function panelCode(ev,comp){
   if(comp&&Array.isArray(comp.findings)) comp.findings.forEach(function(f){ if(!isObj(f)) return; var w=f.written||{}; var name=firstVal(w,["name","check","test"]); if(name) kindByName[String(name)]=f.kind; });
   if(Array.isArray(meas.results)) meas.results.forEach(function(r){ if(!isObj(r)) return; var name=firstVal(r,["name","check","test","input"])||"Check"; var exp=firstVal(r,["expected_output","expected_outcome","expected"]); var act=firstVal(r,["actual_output","actual_outcome","stdout","actual","output"]); if(act==null&&r.stderr) act=r.stderr; var res=checkResult(r,kindByName[String(name)]); rows.push({name:String(name),exp:exp,act:act,result:res}); });
   if(!rows.length&&comp&&Array.isArray(comp.findings)) comp.findings.forEach(function(f){ if(!isObj(f)) return; var w=isObj(f.written)?f.written:{}, d=isObj(f.delivered)?f.delivered:{}; var name=firstVal(w,["name","check","test"])||firstVal(d,["name","check","test"])||"Check"; var res=checkResult(d,f.kind); rows.push({name:String(name),exp:firstVal(w,["expected_output","expected_outcome","expected"]),act:firstVal(d,["actual_output","actual_outcome","stdout","actual","output"]),result:res}); });
-  if(!rows.length) return panelWrap("code","Code — Stated checks and outcomes",panelEmptyLine("No check results recorded for this iteration."));
+  if(!rows.length) return panelWrap("code","Code: Stated checks and outcomes",panelEmptyLine("No check results recorded for this iteration."));
   var h='<table class="panel-table"><thead><tr><th>Check</th><th>Expected outcome</th><th>Actual outcome</th><th>Result</th></tr></thead><tbody>';
   rows.forEach(function(r){ h+='<tr><td>'+esc(r.name)+'</td><td>'+esc(fmtVal(r.exp))+'</td><td>'+esc(fmtVal(r.act))+'</td><td><span class="'+esc(r.result.cls)+'">'+esc(r.result.label)+'</span></td></tr>'; });
   h+='</tbody></table>';
   if(isNum(meas.test_count)) h+='<p class="panel-note">Checks stated (as recorded): '+esc(fmt(meas.test_count))+' · matched (as recorded): '+esc(fmt(meas.matched_count))+'.</p>';
-  return panelWrap("code","Code — Stated checks and outcomes",h);
+  return panelWrap("code","Code: Stated checks and outcomes",h);
 }
 function panelPoetry(ev,comp){
   var meas=(ev&&isObj(ev.measurements))?ev.measurements:{};
   var lines=Array.isArray(meas.lines)?meas.lines:[];
-  if(!lines.length&&comp&&Array.isArray(comp.findings)) lines=comp.findings.map(function(f){ if(!isObj(f)) return null; var w=isObj(f.written)?f.written:{}; return {line:firstVal(w,["line","global_line","line_number"]),stanza:firstVal(w,["stanza"]),text:firstVal(w,["text"])||"—",syllable_estimate:firstNum(w,["syllable_estimate","syllables"]),_finding:f.kind}; }).filter(Boolean);
-  if(!lines.length) return panelWrap("poetry","Poetry — Declared form grid (lines by stanza, syllables)",panelEmptyLine("No line data recorded for this iteration."));
+  if(!lines.length&&comp&&Array.isArray(comp.findings)) lines=comp.findings.map(function(f){ if(!isObj(f)) return null; var w=isObj(f.written)?f.written:{}; return {line:firstVal(w,["line","global_line","line_number"]),stanza:firstVal(w,["stanza"]),text:firstVal(w,["text"])||"-",syllable_estimate:firstNum(w,["syllable_estimate","syllables"]),_finding:f.kind}; }).filter(Boolean);
+  if(!lines.length) return panelWrap("poetry","Poetry: Declared form grid (lines by stanza, syllables)",panelEmptyLine("No line data recorded for this iteration."));
   var declared=comp?firstVal(comp,["syllables_per_line","declared_syllables_per_line"]):null;
   var marked={};
   if(comp&&Array.isArray(comp.findings)) comp.findings.forEach(function(f){ if(!isObj(f)) return; var w=isObj(f.written)?f.written:{}, d=isObj(f.delivered)?f.delivered:{}; var ln=firstVal(w,["global_line","line"])||firstVal(d,["global_line","line"])||firstVal(w,["line_number"]); if(ln!=null) marked[String(ln)]=f.kind||"marked in comparison"; if(w.text&&d.text&&w.text!==d.text) { var ln2=firstVal(w,["global_line","line"]); if(ln2!=null) marked[String(ln2)]="marked in comparison"; } });
@@ -1396,11 +1561,11 @@ function panelPoetry(ev,comp){
   var h="";
   Object.keys(byStanza).map(Number).sort(function(a,b){return a-b;}).forEach(function(st){
     h+='<div class="poetry-stanza"><h4>Stanza '+esc(st)+'</h4>';
-    byStanza[st].forEach(function(item){ var l=item.l; var ln=firstVal(l,["line","global_line","line_number"])||(item.i+1); var counted=firstNum(l,["syllable_estimate","syllables","counted_syllables"]); var decl=null; if(Array.isArray(declared)) decl=declared[item.i]; else if(isNum(declared)) decl=declared; else if(comp&&Array.isArray(comp.findings)){ for(var fi=0;fi<comp.findings.length;fi++){ var fw=comp.findings[fi]&&comp.findings[fi].written; if(isObj(fw)){ var fl=firstVal(fw,["global_line","line"]); if(String(fl)===String(ln)&&isNum(fw.syllable_estimate)) decl=fw.syllable_estimate; } } } var isMarked=marked[String(ln)]; h+='<div class="poetry-line'+(isMarked?" marked":"")+'"><div>Line '+esc(String(ln))+'</div><div>'+esc(String(firstVal(l,["text"])||"—"))+'</div><div>Counted: '+esc(counted!=null?fmt(counted):"—")+'</div><div>Declared: '+esc(decl!=null?fmt(decl):"—")+(isMarked?' <span class="small">· '+esc(isMarked)+'</span>':"")+'</div></div>'; });
+    byStanza[st].forEach(function(item){ var l=item.l; var ln=firstVal(l,["line","global_line","line_number"])||(item.i+1); var counted=firstNum(l,["syllable_estimate","syllables","counted_syllables"]); var decl=null; if(Array.isArray(declared)) decl=declared[item.i]; else if(isNum(declared)) decl=declared; else if(comp&&Array.isArray(comp.findings)){ for(var fi=0;fi<comp.findings.length;fi++){ var fw=comp.findings[fi]&&comp.findings[fi].written; if(isObj(fw)){ var fl=firstVal(fw,["global_line","line"]); if(String(fl)===String(ln)&&isNum(fw.syllable_estimate)) decl=fw.syllable_estimate; } } } var isMarked=marked[String(ln)]; h+='<div class="poetry-line'+(isMarked?" marked":"")+'"><div>Line '+esc(String(ln))+'</div><div>'+esc(String(firstVal(l,["text"])||"-"))+'</div><div>Counted: '+esc(counted!=null?fmt(counted):"-")+'</div><div>Declared: '+esc(decl!=null?fmt(decl):"-")+(isMarked?' <span class="small">· '+esc(isMarked)+'</span>':"")+'</div></div>'; });
     h+='</div>';
   });
   h+='<p class="panel-note">Counted syllables are the instrument estimates (as recorded) beside the declared syllables per line from the comparison. Lines named in the comparison are marked.</p>';
-  return panelWrap("poetry","Poetry — Declared form grid (lines by stanza, syllables)",h);
+  return panelWrap("poetry","Poetry: Declared form grid (lines by stanza, syllables)",h);
 }
 function panelStory(ev,comp){
   var meas=(ev&&isObj(ev.measurements))?ev.measurements:{};
@@ -1411,42 +1576,240 @@ function panelStory(ev,comp){
   if(comp&&Array.isArray(comp.findings)) comp.findings.forEach(function(f){ if(!isObj(f)) return; if(isObj(f.written)){ var t=titleOf(f.written); var key=t!=null?String(t):(f.written.section!=null?String(f.written.section):null); if(key&&titles.indexOf(key)<0) titles.push(key); if(key){ var ws=firstNum(f.written,["written_share","share_of_whole","share"]); if(ws!=null) writtenShare[key]=ws; } } if(isObj(f.delivered)){ var t2=titleOf(f.delivered); var key2=t2!=null?String(t2):(f.delivered.section!=null?String(f.delivered.section):null); if(key2&&titles.indexOf(key2)<0) titles.push(key2); if(key2){ var ds=firstNum(f.delivered,["delivered_share","share_of_whole","share"]); if(ds!=null) deliveredShare[key2]=ds; } } });
   var found=Array.isArray(meas.promised_events_found)?meas.promised_events_found:[];
   var notFound=Array.isArray(meas.promised_events_not_found)?meas.promised_events_not_found:[];
-  if(!titles.length&&!found.length&&!notFound.length) return panelWrap("story","Story — Section shares and promised events",panelEmptyLine("No section or promised-event data recorded for this iteration."));
+  if(!titles.length&&!found.length&&!notFound.length) return panelWrap("story","Story: Section shares and promised events",panelEmptyLine("No section or promised-event data recorded for this iteration."));
   var maxShare=0.0001; titles.forEach(function(k){ if(isNum(writtenShare[k])) maxShare=Math.max(maxShare,writtenShare[k]); if(isNum(deliveredShare[k])) maxShare=Math.max(maxShare,deliveredShare[k]); });
   var sectionOfEvent={};
   if(comp&&Array.isArray(comp.findings)) comp.findings.forEach(function(f){ if(f&&f.kind==="event_not_delivered"&&isObj(f.written)){ var evName=firstVal(f.written,["event","promised_event","text"]); var t=titleOf(f.written); if(evName!=null&&t!=null) sectionOfEvent[String(evName)]=String(t); else if(evName!=null&&f.written.section!=null) sectionOfEvent[String(evName)]=String(f.written.section); } });
   if(ev&&ev.full&&Array.isArray(ev.full.sections)) found.forEach(function(name){ if(sectionOfEvent[String(name)]) return; var lower=String(name).toLowerCase(); for(var i=0;i<ev.full.sections.length;i++){ var sec=ev.full.sections[i]; var text=(sec.text||"")+" "+(Array.isArray(sec.lines)?sec.lines.join(" "):""); if(text.toLowerCase().indexOf(lower)>=0){ var t=titleOf(sec); if(t!=null) sectionOfEvent[String(name)]=String(t); break; } } });
   var h="";
   titles.forEach(function(k){
-    h+='<div style="margin-bottom:16px"><h4>'+esc(k)+'</h4>';
+    h+='<div class="story-section"><h4>'+esc(k)+'</h4>';
     if(isNum(writtenShare[k])) h+='<div class="bar-row"><span>Written share</span><div class="bar-track"><div class="bar-fill-written" style="width:'+esc(String(Math.round((writtenShare[k]/maxShare)*100)))+'%"></div></div><span>'+esc(fmt(writtenShare[k]))+'</span></div>';
     else h+='<p class="panel-note">Written share not recorded in the comparison for this section.</p>';
     if(isNum(deliveredShare[k])) h+='<div class="bar-row"><span>Delivered share</span><div class="bar-track"><div class="bar-fill-delivered" style="width:'+esc(String(Math.round((deliveredShare[k]/maxShare)*100)))+'%"></div></div><span>'+esc(fmt(deliveredShare[k]))+'</span></div>';
     else h+='<p class="panel-note">Delivered share not recorded in the measurements for this section.</p>';
     var evs=found.filter(function(n){return sectionOfEvent[String(n)]===k;}).map(function(n){return {n:n,ok:true};}).concat(notFound.filter(function(n){return sectionOfEvent[String(n)]===k;}).map(function(n){return {n:n,ok:false};}));
-    if(evs.length){ h+='<ul>'+evs.map(function(e){return '<li>'+esc(String(e.n))+' — '+(e.ok?badge("ok","delivered"):badge("warn","not delivered"))+'</li>';}).join("")+'</ul>'; }
+    if(evs.length){ h+='<ul>'+evs.map(function(e){return '<li>'+esc(String(e.n))+', '+(e.ok?badge("ok","delivered"):badge("warn","not delivered"))+'</li>';}).join("")+'</ul>'; }
     h+='</div>';
   });
   var unassigned=found.filter(function(n){return !sectionOfEvent[String(n)];}).map(function(n){return {n:n,ok:true};}).concat(notFound.filter(function(n){return !sectionOfEvent[String(n)];}).map(function(n){return {n:n,ok:false};}));
-  if(unassigned.length) h+='<div><h4>Promised events (section not recorded)</h4><ul>'+unassigned.map(function(e){return '<li>'+esc(String(e.n))+' — '+(e.ok?badge("ok","delivered"):badge("warn","not delivered"))+'</li>';}).join("")+'</ul></div>';
+  if(unassigned.length) h+='<div><h4>Promised events (section not recorded)</h4><ul>'+unassigned.map(function(e){return '<li>'+esc(String(e.n))+', '+(e.ok?badge("ok","delivered"):badge("warn","not delivered"))+'</li>';}).join("")+'</ul></div>';
   h+='<p class="panel-note">Written (teal) and delivered (brass) shares use the same scale. Promised events are listed under their sections as delivered or not delivered, as recorded in the measurements and comparison.</p>';
-  return panelWrap("story","Story — Section shares and promised events",h);
+  return panelWrap("story","Story: Section shares and promised events",h);
 }
+
+function panelArgument(ev,comp){
+  var meas=(ev&&isObj(ev.measurements))?ev.measurements:{};
+  var claims=Array.isArray(meas.claims)?meas.claims:[];
+  if(!claims.length&&comp&&Array.isArray(comp.findings)){
+    claims=comp.findings.map(function(f){ if(!isObj(f)) return null; var w=isObj(f.written)?f.written:{};
+      return {claim_id:firstVal(w,["claim_id","id"]),kind:w.kind,present:false,_finding:f.kind}; }).filter(Boolean);
+  }
+  if(!claims.length&&comp&&Array.isArray(comp.source_checks)) claims=comp.source_checks.map(function(c){ return {claim_id:c.claim_id,kind:"fact"}; });
+  if(!claims.length) return panelWrap("argument","Argument: Claim map",panelEmptyLine("No claim data recorded for this iteration."));
+  var statusByClaim={};
+  if(comp&&Array.isArray(comp.source_checks)) comp.source_checks.forEach(function(c){ if(isObj(c)) statusByClaim[String(c.claim_id)]=c.status; });
+  var ri=renderInfoFor&&typeof renderInfoFor==="function"?renderInfoFor(iteration):null;
+  var sr=null;
+  if(ri&&isObj(ri.structure_record)) sr=ri.structure_record;
+  if(!sr&&ev&&ev.structure_record) sr=ev.structure_record;
+  var structClaims=sr&&Array.isArray(sr.claims)?sr.claims:[];
+  var structById={};
+  structClaims.forEach(function(c){ if(isObj(c)&&c.id!=null) structById[String(c.id)]=c; });
+  var art=(typeof workArtifact==="function")?workArtifact():null;
+  var artById={};
+  if(art&&Array.isArray(art.claims)) art.claims.forEach(function(c){ if(isObj(c)&&c.id!=null) artById[String(c.id)]=c; });
+  var conclusionId=firstVal(comp||{},["conclusion_id"])||(sr?sr.conclusion:null)||(art?art.conclusion:null);
+  var rows=claims.map(function(c){
+    var id=c.claim_id!=null?String(c.claim_id):"";
+    var sc=structById[id]||artById[id]||{};
+    var kind=c.kind||sc.kind||"-";
+    var premises=Array.isArray(c.premises)?c.premises:(Array.isArray(sc.premises)?sc.premises:(isNum(sc.premise_count)?new Array(sc.premise_count).fill(""):[]));
+    var sources=Array.isArray(c.sources)?c.sources:(Array.isArray(sc.sources)?sc.sources:(isNum(sc.source_count)?new Array(sc.source_count).fill(""):[]));
+    var isConcl=(conclusionId!=null&&String(conclusionId)===id)||sc.is_conclusion===true;
+    var support=premises.length+" premise(s), "+sources.length+" source(s)";
+    var status=statusByClaim[id];
+    if(!status&&kind==="fact"&&!sources.length) status="unverified";
+    if(!status) status="-";
+    var present=(c.present===true)?"delivered":(c.present===false?"not delivered":"-");
+    return '<tr><td>'+esc(id)+(isConcl?' <span class="badge warn">conclusion</span>':"")+'</td><td>'+esc(String(kind))+'</td><td>'+esc(support)+'</td><td>'+esc(status)+'</td><td>'+esc(present)+'</td></tr>';
+  }).join("");
+  var h='<table class="panel-table"><thead><tr><th>Claim</th><th>Kind</th><th>Support</th><th>Source check</th><th>Delivered</th></tr></thead><tbody>'+rows+'</tbody></table>';
+  h+='<p class="panel-note">Claim map: one row per claim with its kind, its support (premise count, source check status), and the conclusion marked. Source check statuses are as recorded in the comparison (supported, contradicted, not present, unverified).</p>';
+  return panelWrap("argument","Argument: Claim map",h);
+}
+
+function musicSegOsc(seg){
+  if(!isObj(seg)) return {};
+  if(isObj(seg.oscilloscope)) return seg.oscilloscope;
+  if(isObj(seg.oscilloscope_block)) return seg.oscilloscope_block;
+  return {};
+}
+function musicSegReading(seg){
+  return isObj(seg)&&isObj(seg.reading)?seg.reading:{};
+}
+function musicSegmentInfo(seg){
+  var n=isObj(seg)&&seg.segment!=null?seg.segment:"-";
+  var st=firstNum(seg,["start_time"]), en=firstNum(seg,["end_time"]);
+  var tt=(st!=null&&en!=null)?(" ("+fmt(st)+"-"+fmt(en)+" s)"):"";
+  return "Segment "+n+tt;
+}
+function musicOscSideHtml(seg){
+  var osc=musicSegOsc(seg);
+  var peak=firstNum(osc,["peak"]);
+  var rms=firstNum(osc,["rms"]);
+  return '<div class="field"><div class="k">Peak</div><div class="v">'+esc(peak!=null?fmt(peak):"-")+'</div></div><div class="field"><div class="k">RMS</div><div class="v">'+esc(rms!=null?fmt(rms):"-")+'</div></div>';
+}
+function musicReadingsHtml(seg){
+  var reading=musicSegReading(seg);
+  var osc=musicSegOsc(seg);
+  var pitch=firstNum(seg,["pitch_hz"]); if(pitch==null) pitch=firstNum(reading,["pitch_hz"]);
+  var loud=firstNum(seg,["loudness","loud"]); if(loud==null) loud=firstNum(reading,["loudness","loud"]);
+  var bright=firstNum(seg,["brightness","centroid"]); if(bright==null) bright=firstNum(reading,["brightness"]);
+  var peak=firstNum(osc,["peak"]);
+  var rms=firstNum(osc,["rms"]);
+  var zcr=firstNum(osc,["zero_crossing_rate"]);
+  function cell(v,unit){ return v==null?"-":(fmt(v)+(unit?" "+unit:"")); }
+  var rows=[["Pitch",cell(pitch,"Hz")],["Loudness",cell(loud,"dB")],["Brightness",cell(bright,"Hz")],["Peak",cell(peak,"")],["RMS",cell(rms,"")],["Zero-crossing rate",cell(zcr,"/s")]];
+  return '<table class="panel-table"><thead><tr><th>Reading</th><th>Value as recorded</th></tr></thead><tbody>'+rows.map(function(r){return '<tr><td>'+esc(r[0])+'</td><td>'+esc(r[1])+'</td></tr>';}).join("")+'</tbody></table>';
+}
+function musicHarmonicHtml(seg){
+  var cands=isObj(seg)&&Array.isArray(seg.polyphony_candidates)?seg.polyphony_candidates:[];
+  var maxScore=0;
+  cands.forEach(function(c){ if(isObj(c)&&isNum(c.score)&&c.score>maxScore) maxScore=c.score; });
+  var h="";
+  if(cands.length){
+    h+=cands.map(function(c){
+      if(!isObj(c)) return "";
+      var label=c.note!=null?String(c.note):("midi "+fmt(c.midi));
+      var sub=(c.midi!=null?(" midi "+fmt(c.midi)):"")+(isNum(c.freq_hz)?(" · "+fmt(c.freq_hz)+" Hz"):"");
+      var frac=isNum(c.normalized_score)?c.normalized_score:(maxScore>0&&isNum(c.score)?c.score/maxScore:0);
+      if(frac<0) frac=0; if(frac>1) frac=1;
+      var pct=Math.round(frac*100);
+      var val=isNum(c.normalized_score)?fmt(c.normalized_score):(isNum(c.score)?fmt(c.score):"-");
+      return '<div class="bar-row"><span>'+esc(label+sub)+'</span><div class="bar-track"><div class="bar-fill-written" style="width:'+pct+'%"></div></div><span>'+esc(val)+'</span></div>';
+    }).join("");
+  }
+  var hp=firstNum(seg,["harmonic_pitch","harmonic_pitch_hz"]);
+  var hm=isObj(seg)&&seg.harmonic_midi!=null?seg.harmonic_midi:null;
+  var hc=firstNum(seg,["harmonic_confidence"]);
+  var parts=[];
+  if(hp!=null) parts.push("harmonic pitch "+fmt(hp)+" Hz");
+  if(hm!=null) parts.push("midi "+fmt(hm));
+  if(hc!=null) parts.push("confidence "+fmt(hc));
+  if(parts.length) h+='<p class="panel-note">Harmonic pitch as recorded: '+esc(parts.join(" · "))+'</p>';
+  if(!cands.length&&!parts.length) h=panelEmptyLine("No harmonic figures recorded for this segment.");
+  return h;
+}
+function drawMusicOscilloscope(canvas,waveform){
+  if(!canvas) return;
+  var W=720,H=220; canvas.width=W; canvas.height=H;
+  var ctx=canvas.getContext("2d");
+  ctx.fillStyle="#141518"; ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle="#35393F"; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(0,H/2); ctx.lineTo(W,H/2); ctx.stroke();
+  if(!Array.isArray(waveform)||!waveform.length||!Array.isArray(waveform[0])){
+    ctx.fillStyle="#B9B4A8"; ctx.font="14px sans-serif"; ctx.fillText("No waveform image recorded for this segment.",12,24); return;
+  }
+  var rows=waveform.length, cols=waveform[0].length;
+  ctx.strokeStyle="#35C4B5"; ctx.lineWidth=2; ctx.beginPath();
+  for(var c=0;c<cols;c++){
+    var top=-1,bot=-1;
+    for(var r=0;r<rows;r++){ if(Number(waveform[r][c])>0){ if(top<0) top=r; bot=r; } }
+    if(top<0) continue;
+    var x=(c+0.5)/cols*W;
+    var yTop=(top+0.5)/rows*H;
+    var yBot=(bot+0.5)/rows*H;
+    ctx.moveTo(x,yTop); ctx.lineTo(x,yBot);
+  }
+  ctx.stroke();
+  ctx.strokeStyle="#C9A86A"; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(W/2,H/2-6); ctx.lineTo(W/2,H/2+6); ctx.stroke();
+}
+function drawMusicField(canvas,grid){
+  if(!canvas) return;
+  var W=720,H=220; canvas.width=W; canvas.height=H;
+  var ctx=canvas.getContext("2d");
+  ctx.fillStyle="#141518"; ctx.fillRect(0,0,W,H);
+  if(!Array.isArray(grid)||!grid.length||!Array.isArray(grid[0])){
+    ctx.fillStyle="#B9B4A8"; ctx.font="14px sans-serif"; ctx.fillText("No image recorded for this segment.",12,24); return;
+  }
+  var rows=grid.length, cols=grid[0].length;
+  var peak=0;
+  for(var y=0;y<rows;y++) for(var x=0;x<cols;x++){ var vv=Number(grid[y][x])||0; if(vv>peak) peak=vv; }
+  var denom=peak>1.5?255:(peak>0?peak:1);
+  var off=document.createElement("canvas"); off.width=cols; off.height=rows;
+  var octx=off.getContext("2d");
+  var img=octx.createImageData(cols,rows);
+  for(var yy=0;yy<rows;yy++){
+    for(var xx=0;xx<cols;xx++){
+      var val=(Number(grid[yy][xx])||0)/denom;
+      if(val<0) val=0; if(val>1) val=1;
+      var idx=(yy*cols+xx)*4;
+      var rr,gg,bb;
+      if(val<0.5){ var u=val/0.5; rr=Math.round(20+(53-20)*u); gg=Math.round(21+(196-21)*u); bb=Math.round(24+(181-24)*u); }
+      else { var u2=(val-0.5)/0.5; rr=Math.round(53+(201-53)*u2); gg=Math.round(196+(168-196)*u2); bb=Math.round(181+(106-181)*u2); }
+      img.data[idx]=rr; img.data[idx+1]=gg; img.data[idx+2]=bb; img.data[idx+3]=255;
+    }
+  }
+  octx.putImageData(img,0,0);
+  ctx.imageSmoothingEnabled=false;
+  ctx.drawImage(off,0,0,W,H);
+}
+function panelMusic(ev,comp){
+  var data=segmentsOf(ev).list;
+  if(!data.length) return panelWrap("music","Music: Hearing instruments",panelEmptyLine("No token pack segments recorded for this iteration."));
+  var s0=data[0];
+  var options=data.map(function(s,i){ return '<option value="'+i+'"'+(i===0?" selected":"")+'>'+esc(musicSegmentInfo(s))+'</option>'; }).join("");
+  var inner="";
+  inner+='<div class="btn-row"><label class="small" for="music-segment-select">Segment</label><select id="music-segment-select" aria-label="Select segment" class="select-auto">'+options+'</select><span class="small" id="music-segment-info">'+esc(musicSegmentInfo(s0))+'</span></div>';
+  inner+='<div class="music-instruments">';
+  inner+='<div class="music-instrument"><h4>Oscilloscope</h4><div class="music-osc-row"><canvas id="music-oscilloscope-canvas" class="music-instrument-canvas" role="img" aria-label="Oscilloscope waveform drawn from the recorded waveform image"></canvas><div class="music-osc-side" id="music-osc-side">'+musicOscSideHtml(s0)+'</div></div><p class="panel-note">Waveform drawn from oscilloscope.waveform_image as recorded (32 rows by 64 columns). Peak and RMS are labeled beside the waveform.</p></div>';
+  inner+='<div class="music-instrument"><h4>Spectrogram</h4><canvas id="music-spec-canvas" class="music-instrument-canvas" role="img" aria-label="Spectrogram field drawn from the recorded spectrogram image"></canvas><p class="panel-note">Spectrogram field drawn from spectrogram_image as recorded (places by time, low places at the bottom).</p></div>';
+  inner+='<div class="music-instrument"><h4>Chladni figure</h4><canvas id="music-chladni-canvas" class="music-instrument-canvas" role="img" aria-label="Chladni figure drawn from the recorded Chladni image"></canvas><p class="panel-note">Chladni figure drawn from chladni_image as recorded.</p></div>';
+  inner+='<div class="music-instrument"><h4>Harmonic stack</h4><div id="music-harmonic-bars">'+musicHarmonicHtml(s0)+'</div><p class="panel-note">Bars are drawn from polyphony_candidates as recorded (normalized score or score).</p></div>';
+  inner+='<div class="music-instrument"><h4>Readings for the selected segment</h4><div id="music-readings">'+musicReadingsHtml(s0)+'</div></div>';
+  inner+='</div>';
+  return panelWrap("music","Music: Hearing instruments (oscilloscope, spectrogram, Chladni, harmonics)",inner);
+}
+function initMusicPanel(ev){
+  var sel=el("music-segment-select"); if(!sel) return;
+  var data=segmentsOf(ev).list;
+  function show(idx){
+    var seg=data[idx]; if(!seg) return;
+    var _cvs=[el("music-oscilloscope-canvas"),el("music-spec-canvas"),el("music-chladni-canvas")];
+    _cvs.forEach(function(c){ if(c) c.classList.add("is-switching"); });
+    setTimeout(function(){
+    _cvs.forEach(function(c){ if(c) c.classList.remove("is-switching"); });
+    },180);
+    var osc=musicSegOsc(seg);
+    drawMusicOscilloscope(el("music-oscilloscope-canvas"),osc?osc.waveform_image:null);
+    drawMusicField(el("music-spec-canvas"),seg.spectrogram_image);
+    drawMusicField(el("music-chladni-canvas"),seg.chladni_image);
+    var harm=el("music-harmonic-bars"); if(harm) harm.innerHTML=musicHarmonicHtml(seg);
+    var read=el("music-readings"); if(read) read.innerHTML=musicReadingsHtml(seg);
+    var side=el("music-osc-side"); if(side) side.innerHTML=musicOscSideHtml(seg);
+    var info=el("music-segment-info"); if(info) info.textContent=musicSegmentInfo(seg);
+  }
+  sel.addEventListener("change",function(){ show(Number(sel.value)); });
+  show(0);
+}
+
 function renderVisualPanel(){
   var body=el("visual-panel-body"), title=el("visual-panel-title");
   if(!body) return;
   if(!current){ body.innerHTML=panelEmptyLine("Select a session to show its visual panel."); if(title) title.textContent="Visual panel"; return; }
   var ev=evidenceOf(iteration), comp=comparisonOf(ev), html="";
-  if(appType==="sound_design") html=panelSound(ev,comp);
+  if(appType==="music") html=(segmentsOf(ev).list.length?panelMusic(ev,comp):panelSound(ev,comp));
   else if(appType==="typography") html=panelTypography(ev,comp);
   else if(appType==="drawing") html=panelDrawing(ev,comp);
   else if(appType==="animation") html=panelAnimation(ev,comp);
   else if(appType==="code") html=panelCode(ev,comp);
   else if(appType==="poetry") html=panelPoetry(ev,comp);
   else if(appType==="story") html=panelStory(ev,comp);
+  else if(appType==="argument") html=panelArgument(ev,comp);
   else { body.innerHTML=panelEmptyLine("No visual panel for this application."); if(title) title.textContent="Visual panel"; return; }
   body.innerHTML=html;
-  if(title) title.textContent="Visual panel — "+(APPS[appType]||appType);
+  if(appType==="music"&&segmentsOf(ev).list.length) initMusicPanel(ev);
+  if(title) title.textContent="Visual panel: "+(APPS[appType]||appType);
 }
 
 /* ============ render orchestration ============ */
@@ -1463,11 +1826,84 @@ function selectSession(s){
   // last iteration is the most informative default; timeline still covers all
   render();
 }
+
+/* ============ app shell: views, drawer, dashboard, settings ============ */
+var currentView="dashboard";
+function showView(name){
+  currentView=name;
+  ["dashboard","sessions","settings"].forEach(function(v){
+    var sec=el("view-"+v); if(sec) sec.hidden=(v!==name);
+  });
+  var labels={dashboard:"Dashboard",sessions:"Sessions",settings:"Settings"};
+  var cv=el("current-view-name"); if(cv) cv.textContent=labels[name]||name;
+  Array.prototype.forEach.call(document.querySelectorAll(".nav-item"),function(b){
+    if(b.dataset.view===name) b.setAttribute("aria-current","page"); else b.removeAttribute("aria-current");
+  });
+  closeNav(true);
+  if(window.scrollTo) window.scrollTo(0,0);
+}
+function openNav(){
+  var d=el("nav-drawer"), bd=el("nav-backdrop"), t=el("nav-toggle");
+  if(!d) return;
+  d.classList.add("open"); d.setAttribute("aria-hidden","false");
+  if(bd) bd.hidden=false;
+  if(t) t.setAttribute("aria-expanded","true");
+  document.body.classList.add("modal-open");
+  var first=d.querySelector(".nav-item"); if(first) first.focus();
+}
+function closeNav(returnFocus){
+  var d=el("nav-drawer"), bd=el("nav-backdrop"), t=el("nav-toggle");
+  if(!d) return;
+  var wasOpen=d.classList.contains("open");
+  d.classList.remove("open"); d.setAttribute("aria-hidden","true");
+  if(bd) bd.hidden=true;
+  if(t) t.setAttribute("aria-expanded","false");
+  document.body.classList.remove("modal-open");
+  if(returnFocus!==false&&wasOpen&&t) t.focus();
+}
+function renderRecentSessions(){
+  var box=el("recent-sessions"); if(!box) return;
+  if(!sessions.length){ box.innerHTML='<p class="missing">No sessions yet.</p>'; return; }
+  var sorted=sessions.slice().sort(function(a,b){
+    var ma=sessionMeta(a), mb=sessionMeta(b);
+    var ta=ma.lastTs||"", tb=mb.lastTs||"";
+    if(ta!==tb) return ta<tb?1:-1;
+    return String(b.session_id).localeCompare(String(a.session_id));
+  });
+  box.innerHTML="";
+  sorted.slice(0,10).forEach(function(s){
+    var app=appOfSession(s), st=statusOf(s), m=sessionMeta(s);
+    var row=document.createElement("button");
+    row.type="button"; row.className="recent-row";
+    row.innerHTML='<span class="sid">'+esc(s.session_id)+'</span><span class="smeta">'+esc(APPS[app]||app||"unknown app")+" \u00b7 "+esc(s.condition||"")+" \u00b7 "+esc(st.label)+(m.lastTs?(" \u00b7 "+esc(m.lastTs)):"")+'</span>';
+    row.addEventListener("click",function(){ selectSession(s); showView("sessions"); });
+    box.appendChild(row);
+  });
+}
+function updateKeyStatus(data){
+  var w=el("worker-key-status"), j=el("judge-key-status");
+  if(w) w.textContent=(data&&data.worker_key_set)?"Key saved":"No key saved";
+  if(j) j.textContent=(data&&data.judge_key_set)?"Key saved":"No key saved";
+}
+function loadSettings(){
+  if(!window.fetch) return;
+  fetch("/api/settings").then(function(r){return r.json();}).then(function(d){ updateKeyStatus(d); }).catch(function(){ updateKeyStatus({worker_key_set:false,judge_key_set:false}); });
+}
+function saveSettings(){
+  var workerEl=el("worker-key"), judgeEl=el("judge-key");
+  var payload={worker_key:workerEl?workerEl.value:"",judge_key:judgeEl?judgeEl.value:""};
+  fetch("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)}).then(function(r){return r.json();}).then(function(d){ updateKeyStatus(d); if(workerEl) workerEl.value=""; if(judgeEl) judgeEl.value=""; }).catch(function(){});
+}
+function removeKey(which){
+  fetch("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({remove:which})}).then(function(r){return r.json();}).then(function(d){ updateKeyStatus(d); var inp=el(which==="worker"?"worker-key":"judge-key"); if(inp) inp.value=""; }).catch(function(){});
+}
 /* ============ wiring ============ */
 ["search","filter-app","filter-cond","filter-status","sort-by"].forEach(function(id){
   el(id).addEventListener("input",renderSessions);
   el(id).addEventListener("change",renderSessions);
 });
+var clearBtn=el("clear-filters");
+if(clearBtn){ clearBtn.addEventListener("click",function(){ el("search").value=""; el("filter-app").value=""; el("filter-cond").value=""; el("filter-status").value=""; el("sort-by").value="id"; renderSessions(); el("search").focus(); }); }
 el("ground-truth-toggle").addEventListener("click",function(){
   var box=el("ground-truth-box"), on=box.hidden;
   box.hidden=!on; this.setAttribute("aria-pressed",String(on));
@@ -1484,19 +1920,28 @@ el("compare-toggle").addEventListener("click",function(){
 });
 el("compare-a").addEventListener("change",renderCompare);
 el("compare-b").addEventListener("change",renderCompare);
-el("sidebar-toggle").addEventListener("click",function(){
-  var left=el("left"), hidden=left.style.display==="none";
-  left.style.display=hidden?"":"none";
-  this.setAttribute("aria-pressed",String(!hidden));
-  if(window.innerWidth<=900){ left.scrollIntoView(); }
+el("nav-toggle").addEventListener("click",function(){
+  var d=el("nav-drawer");
+  if(d&&d.classList.contains("open")) closeNav(true); else openNav();
 });
+el("nav-close").addEventListener("click",function(){ closeNav(true); });
+el("nav-backdrop").addEventListener("click",function(){ closeNav(true); });
+document.addEventListener("keydown",function(e){
+  if(e.key==="Escape"){ var d=el("nav-drawer"); if(d&&d.classList.contains("open")) closeNav(true); }
+});
+Array.prototype.forEach.call(document.querySelectorAll(".nav-item"),function(b){
+  b.addEventListener("click",function(){ showView(b.dataset.view); });
+});
+el("settings-save").addEventListener("click",saveSettings);
+el("worker-key-remove").addEventListener("click",function(){ removeKey("worker"); });
+el("judge-key-remove").addEventListener("click",function(){ removeKey("judge"); });
 el("demo-toggle").addEventListener("click",function(){ setDemo(!document.body.classList.contains("demo")); });
 el("demo-exit").addEventListener("click",function(){ setDemo(false); });
 function setDemo(on){
   document.body.classList.toggle("demo",on);
   el("demo-toggle").setAttribute("aria-pressed",String(on));
   el("demo-toggle").textContent=on?"✕ Exit Demonstration mode":"▶ Demonstration mode";
-  document.title=on?"Sensoryne — Demonstration":"Sensoryne — Perceptual Intelligence Interface";
+  document.title=on?"Independent Perceptual Evaluation and Improvement Platform: Demonstration":"Independent Perceptual Evaluation and Improvement Platform";
   if(on){
     var banner=document.querySelector(".demo-banner");
     if(banner) banner.scrollIntoView({block:"start"});
@@ -1521,7 +1966,7 @@ var EventTimeline=(function(){
       if(eventFor("perception",it)) steps.push({mode:"evidence",label:"Iteration "+it+": evidence returned"});
       if(eventFor("decision",it)) steps.push({mode:"decision",label:"Iteration "+it+": model decision recorded"});
       eventsFor("revision_applied",it).forEach(function(r){ steps.push({mode:"applied",label:"Iteration "+it+": revision applied ("+(r.revision&&r.revision.op||"")+")"}); });
-      eventsFor("revision_rejected",it).forEach(function(r){ steps.push({mode:"rejected",label:"Iteration "+it+": revision rejected ("+(r.revision&&r.revision.op||"")+") — see revision history"}); });
+      eventsFor("revision_rejected",it).forEach(function(r){ steps.push({mode:"rejected",label:"Iteration "+it+": revision rejected ("+(r.revision&&r.revision.op||"")+"), see revision history"}); });
     });
     var end=sessionEnd();
     if(end) steps.push({mode:"terminated",label:"Session termination: "+end.ended_by});
@@ -1573,7 +2018,7 @@ var EventTimeline=(function(){
       if(state.paused) return;
       if(state.replayIdx>=steps.length){
         clearInterval(state.replayTimer); state.replayTimer=null; state.replaying=false;
-        setStatus("Replay complete — final recorded state shown. All events are listed in the activity timeline.");
+        setStatus("Replay complete, final recorded state shown. All events are listed in the activity timeline.");
         renderSteps(steps,steps.length-1);
         return;
       }
@@ -1584,21 +2029,21 @@ var EventTimeline=(function(){
     state.replayTimer=setInterval(advance,delay);
   }
   function updateState(){
-    if(!current){ setStatus("Event timeline idle — no session selected"); renderSteps([],-1); return; }
+    if(!current){ setStatus("Event timeline idle, no session selected"); renderSteps([],-1); return; }
     if(state.replaying) return; // replay owns the state
     var steps=recordedSteps();
     var it=iteration;
     var end=sessionEnd();
     var mode="selected", label="Session selected";
     if(end&&it===iterations()[iterations().length-1]){ mode="terminated"; label="Session termination: "+end.ended_by+" (as recorded)"; }
-    else if(eventsFor("revision_rejected",it).length){ mode="rejected"; label="Iteration "+it+": revision rejected — see revision history"; }
-    else if(eventsFor("revision_applied",it).length){ mode="applied"; label="Iteration "+it+": revision applied — new version "+iterLabel(it).vid; }
+    else if(eventsFor("revision_rejected",it).length){ mode="rejected"; label="Iteration "+it+": revision rejected, see revision history"; }
+    else if(eventsFor("revision_applied",it).length){ mode="applied"; label="Iteration "+it+": revision applied, new version "+iterLabel(it).vid; }
     else if(eventFor("decision",it)){ mode="decision"; label="Iteration "+it+": model decision recorded"; }
     else if(eventFor("perception",it)){ mode="evidence"; label="Iteration "+it+": evidence returned"; }
     else if(eventFor("render",it)){ mode="submitted"; label="Iteration "+it+": artifact rendered"; }
     else if(eventFor("perception_skipped",it)){ mode="decision"; label="Iteration "+it+": perception skipped (control condition)"; }
     state.mode=mode;
-    setStatus(label+" — iteration "+it);
+    setStatus(label+" iteration "+it);
     var activeIdx=-1;
     for(var i=steps.length-1;i>=0;i--){
       if(steps[i].mode===mode&&steps[i].label.indexOf("Iteration "+it)===0){ activeIdx=i; break; }
@@ -1618,9 +2063,12 @@ var EventTimeline=(function(){
   return {updateState:updateState,replay:replay};
 })();
 /* ============ boot ============ */
+showView("dashboard");
+loadSettings();
 fetch("/api/sessions").then(function(r){return r.json();}).then(function(d){
   sessions=Array.isArray(d)?d:[];
   fillFilterOptions();
+  renderRecentSessions();
   if(sessions.length){
     // default: first session alphabetically (as before); user can filter/search
     selectSession(sessions[0]);
@@ -1629,7 +2077,8 @@ fetch("/api/sessions").then(function(r){return r.json();}).then(function(d){
     el("session-list").innerHTML='<p class="missing">No sessions found.</p>';
   }
 }).catch(function(){
-  el("session-list").innerHTML='<p class="missing">Sessions unavailable — is the viewer server running?</p>';
+  renderRecentSessions();
+  el("session-list").innerHTML='<p class="missing">Sessions unavailable, is the viewer server running?</p>';
 });
 })();
 </script>
