@@ -1,5 +1,4 @@
 """stage2/apps/story/invariants.py - declared invariants, reliability, coverage."""
-import re
 def _c(i,d,h,v,viol=None): return {"id":i,"description":d,"held":bool(h),"value":v,"violations":list(viol or [])}
 def _obj(art):
  if isinstance(art,dict) and isinstance(art.get("objective"),dict): return art["objective"]
@@ -8,7 +7,6 @@ def evaluate_invariants(artifact,render_record,evidence=None):
  obj=_obj(artifact);secs=artifact.get("sections",[]) if isinstance(art:=artifact,dict) else [];checked=[]
  if "section_count" in obj:
   checked.append(_c("section_count","Delivered section count matches the stated section count.",len(secs)==obj["section_count"],len(secs),[] if len(secs)==obj["section_count"] else [{"stated":obj["section_count"],"measured":len(secs)}]))
-  checked.append(_c("declared_section_count_match","The delivered story matches the section count stated in its objective, with both counts.",len(secs)==obj["section_count"],{"section_count":len(secs),"declared_section_count":obj["section_count"]},[] if len(secs)==obj["section_count"] else [{"stated":obj["section_count"],"measured":len(secs)}]))
  events=list(obj.get("promised_events") or [])
  if events:
   found=[]

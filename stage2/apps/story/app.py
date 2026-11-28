@@ -119,7 +119,7 @@ Input summary:
 Structure record (sections in order with word counts, each section's share of the whole, the position of the longest section, the movement assigned to each position, and the promised events; facts of shape and position only):
 %s
 
-OUTPUT (what was delivered): the delivered text, with the analyzer's full evidence about it below. The analyzer measures and reports; it does not judge. Judge the delivered story against what was written and the objective.
+OUTPUT (what was delivered): the delivered text, with the analyzer's full evidence about it below. Judge the delivered story against what was written and the objective.
 
 Evidence:
 %s
