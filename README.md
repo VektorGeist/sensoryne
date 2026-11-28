@@ -95,7 +95,7 @@ The suite covers the platform core, every application's comparison judgment with
 python -m unittest discover -s tests
 ```
 
-Current state: 139 tests, with one recorded failure, `test_probe_clean_render_has_no_findings`. On one faithful two-part piano render, a single high note (G5) whose attack is masked by the lower part still sounding reads about 10.7 dB softer than written and draws one dynamics finding. Every planted loudness fault is caught and named correctly. The limit is recorded rather than tuned away, because fitting the threshold to that note would make the judgment less trustworthy everywhere else.
+Current state: 176 tests, and run against this package as shipped the suite passes in full. One recorded limit stands behind that: when the probe piece is rendered by the external piano, a single high note (G5) whose attack is masked by the lower part still sounding reads about 10.7 dB softer than written and draws one dynamics finding. Every planted loudness fault is caught and named correctly. The limit is recorded rather than tuned away, because fitting the threshold to that note would make the judgment less trustworthy everywhere else.
 
 ## Security
 

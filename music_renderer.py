@@ -259,6 +259,10 @@ def renderer(artifact, out_path, faults=None):
         music_route = _music_renderer_callable()
         if music_route is not None:
             return music_route(copy.deepcopy(artifact), str(out_path), copy.deepcopy([f for f in faults if f.get("kind") in ("part_gain", "swell", "drop_note")]))
+        samples, total = _render_score_to_samples(artifact, faults)
+        _write_wav(out_path, samples)
+        peak = float(np.max(np.abs(samples))) if samples.size else 0.0
+        return {"path": str(out_path), "kind": "audio", "duration": float(total), "sample_rate": SAMPLE_RATE, "peak": peak, "faults_applied": copy.deepcopy(faults)}
     if has_parts and has_events:
         music_route = _music_renderer_callable()
         delivered_events = _apply_event_faults(artifact.get("events", []), faults)
