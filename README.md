@@ -34,7 +34,7 @@ Sensoryne has a second connection point, for a judge. The comparison judges a de
 
 A judge model connects independently of the model that made the work. It cannot submit work, revise anything, or end a session. Opening a session hands it the complete record: the written work in every version, the evidence and the comparison findings for every perception, the maker's decisions in order, and how the session ended. The pack also carries the application's judging brief: each application states, in its own terms, how its kind of work is to be judged, and instructs the judge to ground every claim in the facts in the record and to say so where the record shows nothing. The music brief, for example, has the judge name the kind of piece from the objective and hold it to that kind's measure: a symphony is judged on its movements, its thematic material developed across the whole span, and whether its length is earned, while a short piano piece is judged at its own scale, neither punished for not being a symphony nor credited as one.
 
-The judge records a verdict on the session's record: a bottom line (good, mixed, or not good), the judgment in its own words, and the strengths and weaknesses it found. Verdicts are recorded, never enforced; nothing in the platform acts on them, and the platform still assigns no score of its own. In this submission both seats, the working model and the judge, are Muse Ember.
+The judge records a verdict on the session's record: a bottom line (good, mixed, or not good), the judgment in its own words, and the strengths and weaknesses it found. Verdicts are recorded, never enforced; nothing in the platform acts on them, and the platform still assigns no score of its own.
 
 ## Applications
 
@@ -100,14 +100,6 @@ Current state: 139 tests, with one recorded failure, `test_probe_clean_render_ha
 ## Security
 
 The code application executes submitted programs in a temporary directory with a reduced environment and disabled sockets, under a per-check time limit. **That is not a security sandbox.** Do not run Sensoryne's code application on untrusted work or expose it to untrusted users. Session records, renders, and evidence are written to the local sessions folder in plain files. The platform itself makes no network calls; the connected model reaches it locally.
-
-## How Muse Ember was used
-
-Every part of this project was written by Muse Ember, working through the Meta Model API under the direction of the project's owner. Ember composed the demonstration works in the recorded sessions as well, answering Sensoryne's judgments with revisions until she judged each work complete.
-
-In this submission, Muse Ember is the only model the project's AI functionality runs on; Sensoryne itself can be used with other models.
-
-Total Meta Model API spend for this project, November 23 to December 2, 2026: $10.40, the total billed on the account. The project's per-run spend ledgers record $9.4485 across 2,483 completed calls; the remainder is calls the API billed that never completed on the client side, for which no ledger line exists. The account billing figure governs.
 
 ## Setup
 
